@@ -1,0 +1,35 @@
+# ─── Env / secrets ───
+.env
+.env.*
+!.env.example
+
+# ─── Docs / project metadata ───
+docs/
+CLAUDE.md
+"StockSense VN (standalone).html"
+
+# ─── Node_modules ───
+*/node_modules
+
+# ─── Build output ───
+frontend/dist
+frontend/dist-ssr
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+
+# ─── Editor ───
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── Logs ───
+*.log
+npm-debug.log*
+
+# ─── Vercel / build cache ───
+.vercel
+.next
+.cache

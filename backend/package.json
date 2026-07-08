@@ -1,0 +1,22 @@
+{
+  "name": "stocksense-vn-backend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "API xác thực cho StockSense VN (Express + PostgreSQL)",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "db:init": "node src/initDb.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1",
+    "ws": "^8.18.0",
+    "zod": "^3.24.1"
+  }
+}
