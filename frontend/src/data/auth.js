@@ -3,6 +3,9 @@
 
 const TOKEN_KEY = 'stocksense.token'
 
+// Base URL cho API — dùng biến môi trường khi có, fallback về proxy tương đối (dev).
+const API_BASE = import.meta.env.VITE_API_URL || ''
+
 export const getToken = () => localStorage.getItem(TOKEN_KEY)
 export const setToken = (t) => localStorage.setItem(TOKEN_KEY, t)
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY)
@@ -14,7 +17,7 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
     const token = getToken()
     if (token) headers.Authorization = `Bearer ${token}`
   }
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${API_BASE}/api${path}`, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,

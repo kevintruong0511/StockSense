@@ -1,0 +1,44 @@
+# Render Blueprint — deploy backend + khởi tạo DB tự động
+# Cách dùng: Render Dashboard → New → Blueprint → chọn file này
+# Sau đó điền các biến trong phần "Variables" của Blueprint.
+
+services:
+  - type: web
+    name: stocksense-api
+    env: node
+    region: singapore       # gần Việt Nam, độ trễ thấp
+    plan: starter           # $7/tháng (free tier không persistent disk)
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false         # điền thủ công trên Render dashboard
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        # Thay bằng domain Vercel thật của bạn
+        value: https://stocksense.vercel.app
+      - key: MARKET_PROVIDER
+        value: simulated
+
+  # Chạy migration DB 1 lần rồi tắt (ephemeral)
+  - type: job
+    name: stocksense-db-init
+    env: node
+    region: singapore
+    plan: starter
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm run db:init
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+    defaultBranch: main

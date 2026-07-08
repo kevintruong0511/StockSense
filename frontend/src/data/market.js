@@ -4,9 +4,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { getToken } from './auth.js'
 
+const API_BASE = import.meta.env.VITE_API_URL || ''
+
 async function authedGet(path) {
   const token = getToken()
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${API_BASE}/api${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
   if (!res.ok) {
@@ -23,8 +25,9 @@ export const fetchRatios = (t) => authedGet(`/stocks/${t}/ratios`)
 
 function wsUrl() {
   const token = getToken() || ''
-  const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
-  return `${proto}://${window.location.host}/ws?token=${encodeURIComponent(token)}`
+  // Ưu tiên VITE_WS_URL (render URL tuyệt đối), fallback về cùng origin.
+  const wsBase = import.meta.env.VITE_WS_URL || `${window.location.protocol}//${window.location.host}`
+  return `${wsBase}/ws?token=${encodeURIComponent(token)}`
 }
 
 // Mở 1 WebSocket, subscribe danh sách mã, trả về map { ticker -> quote } cập
