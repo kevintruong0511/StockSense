@@ -3,6 +3,7 @@ import cors from 'cors'
 import { config } from './config.js'
 import authRoutes from './routes/auth.js'
 import stockRoutes from './routes/stocks.js'
+import aiRoutes from './routes/ai.js'
 
 const app = express()
 
@@ -12,6 +13,7 @@ app.use(express.json())
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 app.use('/api/auth', authRoutes)
 app.use('/api/stocks', stockRoutes)
+app.use('/api/ai', aiRoutes)
 
 // Bắt lỗi JSON hỏng và các lỗi chưa xử lý.
 app.use((err, _req, res, _next) => {

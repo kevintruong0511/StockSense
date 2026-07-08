@@ -4,16 +4,20 @@ import TopBar from './components/TopBar.jsx'
 import Landing from './screens/Landing.jsx'
 import Auth from './screens/Auth.jsx'
 import Dashboard from './screens/Dashboard.jsx'
+import AiAnalysis from './screens/AiAnalysis.jsx'
+import Pricing from './screens/Pricing.jsx'
 import { getToken, setToken, clearToken, fetchMe } from './data/auth.js'
+import { fetchAiStatus } from './data/ai.js'
 
-// Ứng dụng đã rút gọn còn 2 màn: Landing (công khai) + Dashboard (cần đăng nhập).
-const PROTECTED = ['dashboard']
+// Màn cần đăng nhập: Dashboard + Phân tích AI. Landing công khai.
+const PROTECTED = ['dashboard', 'ai']
 
 export default function App() {
   const [screen, setScreen] = useState('landing')
   const [user, setUser] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [newsState, setNewsState] = useState('ready')
+  const [aiEnabled, setAiEnabled] = useState(false)
 
   // Khôi phục phiên từ token đã lưu, rồi áp deep-link: ?screen=dashboard
   useEffect(() => {
@@ -32,7 +36,7 @@ export default function App() {
       if (restored) setUser(restored)
 
       const s = new URLSearchParams(window.location.search).get('screen')
-      const valid = ['landing', 'dashboard']
+      const valid = ['landing', 'dashboard', 'ai', 'pricing']
       // Chỉ mở màn cần đăng nhập khi phiên hợp lệ; nếu không sẽ về màn đăng nhập.
       if (s && valid.includes(s) && (restored || !PROTECTED.includes(s))) {
         setScreen(s)
@@ -44,6 +48,21 @@ export default function App() {
       cancelled = true
     }
   }, [])
+
+  // Kiểm tra tính năng AI có bật ở backend không (để ẩn/hiện đúng trạng thái).
+  useEffect(() => {
+    if (!user) {
+      setAiEnabled(false)
+      return
+    }
+    let cancelled = false
+    fetchAiStatus()
+      .then((s) => !cancelled && setAiEnabled(Boolean(s?.enabled)))
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   // ---------- navigation ----------
   const go = useCallback((s) => setScreen(s), [])
@@ -94,9 +113,17 @@ export default function App() {
     return (
       <Landing
         onLogin={() => go('auth')}
+        onPricing={() => go('pricing')}
         onStart={guard(() => go('dashboard'))}
         onSelectTicker={guard(() => go('dashboard'))}
       />
+    )
+  }
+
+  // ---------- bảng giá (công khai cho khách; bản trong app ở app shell) ----------
+  if (screen === 'pricing' && !user) {
+    return (
+      <Pricing variant="guest" currentPlan="free" onBack={() => go('landing')} onLogin={() => go('auth')} />
     )
   }
 
@@ -120,7 +147,13 @@ export default function App() {
       <main className="flex min-w-0 flex-1 flex-col">
         <TopBar />
         <div className="flex-1 px-8 pb-12 pt-7">
-          <Dashboard newsState={newsState} onRetryNews={retryNews} />
+          {screen === 'ai' ? (
+            <AiAnalysis aiEnabled={aiEnabled} />
+          ) : screen === 'pricing' ? (
+            <Pricing variant="app" user={user} currentPlan="free" />
+          ) : (
+            <Dashboard newsState={newsState} onRetryNews={retryNews} />
+          )}
         </div>
       </main>
     </div>

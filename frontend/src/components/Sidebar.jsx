@@ -1,6 +1,9 @@
 import { Grid, Sparkle, LogOut } from './icons.jsx'
 
-const NAV = [{ key: 'dashboard', label: 'Trang chủ', Icon: Grid }]
+const NAV = [
+  { key: 'dashboard', label: 'Trang chủ', Icon: Grid },
+  { key: 'ai', label: 'Phân tích AI', Icon: Sparkle },
+]
 
 // Lấy 2 ký tự viết tắt từ tên để làm avatar.
 function initials(name = '') {
@@ -53,7 +56,10 @@ export default function Sidebar({ screen, onNavigate, onLogo, user, onLogout }) 
           <p className="m-0 mb-2.5 text-xs leading-relaxed text-slate-400">
             Phân tích AI không giới hạn + xuất PDF
           </p>
-          <button className="w-full rounded-lg bg-blue-600 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-blue-700">
+          <button
+            onClick={() => onNavigate('pricing')}
+            className="w-full rounded-lg bg-blue-600 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-blue-700"
+          >
             Nâng cấp
           </button>
         </div>

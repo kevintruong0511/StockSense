@@ -3,7 +3,7 @@ import { features } from '../data/appData.js'
 
 const CHIPS = ['FPT', 'HPG', 'VNM', 'VCB', 'MWG']
 
-export default function Landing({ onLogin, onStart, onSelectTicker }) {
+export default function Landing({ onLogin, onPricing, onStart, onSelectTicker }) {
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-white to-slate-100">
       {/* top bar */}
@@ -18,8 +18,18 @@ export default function Landing({ onLogin, onStart, onSelectTicker }) {
         </div>
         <nav className="flex items-center gap-7">
           <span className="text-sm font-medium text-slate-600">Tính năng</span>
-          <span className="text-sm font-medium text-slate-600">Bảng giá</span>
-          <span className="text-sm font-medium text-slate-600">Giá gói</span>
+          <button
+            onClick={onPricing}
+            className="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+          >
+            Bảng giá
+          </button>
+          <button
+            onClick={onPricing}
+            className="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+          >
+            Giá gói
+          </button>
           <button
             onClick={onLogin}
             className="rounded-[9px] bg-slate-900 px-[18px] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
