@@ -1,10 +1,8 @@
-import http from 'node:http'
 import express from 'express'
 import cors from 'cors'
 import { config } from './config.js'
 import authRoutes from './routes/auth.js'
 import stockRoutes from './routes/stocks.js'
-import { attachWebSocket } from './ws.js'
 
 const app = express()
 
@@ -24,10 +22,6 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Lỗi máy chủ.' })
 })
 
-// HTTP + WebSocket dùng chung một cổng.
-const server = http.createServer(app)
-attachWebSocket(server)
-
-server.listen(config.port, () => {
-  console.log(`[server] API + WS chạy tại http://localhost:${config.port}`)
+app.listen(config.port, () => {
+  console.log(`[server] API chạy tại http://localhost:${config.port}`)
 })

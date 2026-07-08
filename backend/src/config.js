@@ -7,9 +7,6 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   port: Number(process.env.PORT) || 5174,
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  // Nguồn dữ liệu thị trường: 'simulated' (mặc định) | 'dnse'
-  marketProvider: process.env.MARKET_PROVIDER || 'simulated',
-  dnseToken: process.env.DNSE_TOKEN || '',
 }
 
 if (config.jwtSecret === 'dev-secret-doi-trong-production') {

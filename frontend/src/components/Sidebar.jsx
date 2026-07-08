@@ -1,12 +1,6 @@
-import { Grid, LineChart, Compare, Upload, HistoryIcon, Sparkle, LogOut } from './icons.jsx'
+import { Grid, Sparkle, LogOut } from './icons.jsx'
 
-const NAV = [
-  { key: 'dashboard', label: 'Trang chủ', Icon: Grid },
-  { key: 'detail', label: 'Chi tiết mã', Icon: LineChart },
-  { key: 'compare', label: 'So sánh ngành', Icon: Compare },
-  { key: 'upload', label: 'Phân tích báo cáo', Icon: Upload },
-  { key: 'history', label: 'Lịch sử phân tích', Icon: HistoryIcon },
-]
+const NAV = [{ key: 'dashboard', label: 'Trang chủ', Icon: Grid }]
 
 // Lấy 2 ký tự viết tắt từ tên để làm avatar.
 function initials(name = '') {

@@ -1,22 +1,103 @@
+import { useEffect, useState } from 'react'
 import { Clock, LineChart, AlertCircle } from '../components/icons.jsx'
 import { STOCKS, formatVND, upDown, pctStr, chgStr } from '../data/stocks.js'
-import { dashStats, news } from '../data/appData.js'
-import { useRealtimeQuotes, useFlash } from '../data/market.js'
+import { fetchMarketOverview, fetchMarketNews } from '../data/market.js'
+
+const UP = '#16A34A'
+const DOWN = '#DC2626'
+const BLUE = '#2563EB'
+
+// Màu theo chiều VN-Index.
+const vniColor = (pct) => (pct >= 0 ? UP : DOWN)
+
+// Định dạng chỉ số VN-Index.
+const idxFmt = (n) =>
+  n == null ? '—' : n.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+// Tính stat cards từ dữ liệu thị trường thật.
+function buildDashStats(vni, breadth) {
+  const pct = vni?.pct
+  const deltaColor = pct != null ? vniColor(pct) : BLUE
+  const deltaLabel = pct != null
+    ? (pct >= 0 ? '+' : '') + pct.toFixed(2).replace('.', ',') + '% hôm nay'
+    : 'đang cập nhật'
+  return [
+    {
+      label: 'VN-Index',
+      value: idxFmt(vni?.index),
+      delta: deltaLabel,
+      color: deltaColor,
+    },
+    {
+      label: 'Mã tăng',
+      value: breadth?.gainers != null ? String(breadth.gainers) : '…',
+      delta:
+        breadth?.gainers != null
+          ? `${breadth.gainers + breadth.losers + breadth.unchanged} mã đang giao dịch`
+          : 'đang cập nhật',
+      color: UP,
+    },
+    {
+      label: 'Mã giảm',
+      value: breadth?.losers != null ? String(breadth.losers) : '…',
+      delta:
+        breadth?.gainers != null
+          ? `${breadth.gainers} tăng · ${breadth.unchanged} đứng giá`
+          : 'đang cập nhật',
+      color: DOWN,
+    },
+    {
+      label: 'Khối lượng',
+      value: vni?.vol != null ? (vni.vol / 1e6).toFixed(1).replace('.', ',') + 'M' : '…',
+      delta: 'khớp lệnh phiên hôm nay',
+      color: BLUE,
+    },
+  ]
+}
 
 const WATCH = ['FPT', 'HPG', 'VNM', 'VCB', 'MWG', 'CMG']
 const TOP = ['FPT', 'VCB', 'HPG', 'MWG', 'VNM']
 
-// Khối lượng dạng gọn kiểu Việt (6,71tr / 540ng).
-const volShort = (v) =>
-  v >= 1e6
-    ? (v / 1e6).toFixed(2).replace('.', ',') + 'tr'
-    : (v / 1e3).toFixed(0) + 'ng'
+export default function Dashboard({ newsState: newsStateProp, onRetryNews }) {
+  // Dữ liệu thị trường thật.
+  const [dashStats, setDashStats] = useState(null)
+  const [dashLoading, setDashLoading] = useState(true)
+  const [dashError, setDashError] = useState(null)
+  const [newsData, setNewsData] = useState(null)
+  const [newsLoading, setNewsLoading] = useState(true)
+  const [newsError, setNewsError] = useState(null)
 
-const providerLabel = (p) =>
-  p === 'dnse' ? 'DNSE realtime' : p === 'simulated' ? 'mô phỏng realtime' : 'vnstock'
+  // Gộp trạng thái news (user-triggered retry vs initial load).
+  const effectiveNewsLoading = newsStateProp === 'loading' || (newsLoading && newsData === null)
+  const effectiveNewsError = newsStateProp === 'error' || newsError
+  const effectiveNewsReady = newsData !== null && newsStateProp !== 'error' && newsStateProp !== 'loading'
 
-export default function Dashboard({ onSelectTicker, newsState, onRetryNews }) {
-  const { quotes, provider } = useRealtimeQuotes(WATCH)
+  useEffect(() => {
+    setDashLoading(true)
+    setDashError(null)
+    fetchMarketOverview()
+      .then((r) => {
+        if (r.vni?.source === 'unavailable' && r.breadth?.source === 'unavailable') {
+          setDashError('Không tải được dữ liệu thị trường.')
+        } else {
+          setDashStats(buildDashStats(r.vni, r.breadth))
+        }
+      })
+      .catch((e) => setDashError(e.message))
+      .finally(() => setDashLoading(false))
+  }, [])
+
+  useEffect(() => {
+    setNewsLoading(true)
+    setNewsError(null)
+    fetchMarketNews(8)
+      .then((r) => {
+        if (r.source === 'unavailable') setNewsError('Không tải được tin tức.')
+        else setNewsData(r.items || [])
+      })
+      .catch((e) => setNewsError(e.message))
+      .finally(() => setNewsLoading(false))
+  }, [])
 
   const topAnalyzed = TOP.map((t, i) => {
     const s = STOCKS[t]
@@ -37,27 +118,36 @@ export default function Dashboard({ onSelectTicker, newsState, onRetryNews }) {
           </p>
         </div>
         <div className="flex items-center gap-[7px] text-[12.5px] text-slate-400">
-          {provider ? (
-            <span className="inline-block h-[7px] w-[7px] rounded-full bg-green-600 ss-pulse" />
-          ) : (
-            <Clock size={14} />
-          )}
-          {provider ? 'Giá cập nhật trực tiếp' : 'Cập nhật 09:15 · 08/07/2026'} — nguồn{' '}
-          <strong className="text-slate-500">{providerLabel(provider)}</strong>
+          <Clock size={14} />
+          VN-Index &amp; tin tức cập nhật thật · giá danh mục là số liệu tham khảo
         </div>
       </div>
 
       {/* stat cards */}
       <div className="mb-[22px] grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-        {dashStats.map((s) => (
-          <div key={s.label} className="rounded-[14px] border border-slate-200 bg-white px-5 py-[18px]">
-            <div className="mb-2 text-[12.5px] font-semibold text-slate-500">{s.label}</div>
-            <div className="tnum mb-1 text-2xl font-extrabold tracking-[-0.02em]">{s.value}</div>
-            <div className="tnum text-[13px] font-semibold" style={{ color: s.color }}>
-              {s.delta}
+        {dashLoading && !dashStats ? (
+          [1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-[14px] border border-slate-200 bg-white px-5 py-[18px]">
+              <div className="ss-skel mb-2 h-3 w-1/3" />
+              <div className="ss-skel mb-1 h-7 w-2/3" />
+              <div className="ss-skel h-3 w-1/2" />
             </div>
+          ))
+        ) : dashError ? (
+          <div className="col-span-4 rounded-[14px] border border-slate-200 bg-white px-5 py-[18px] text-sm text-slate-500">
+            {dashError}
           </div>
-        ))}
+        ) : (
+          dashStats.map((s) => (
+            <div key={s.label} className="rounded-[14px] border border-slate-200 bg-white px-5 py-[18px]">
+              <div className="mb-2 text-[12.5px] font-semibold text-slate-500">{s.label}</div>
+              <div className="tnum mb-1 text-2xl font-extrabold tracking-[-0.02em]">{s.value}</div>
+              <div className="tnum text-[13px] font-semibold" style={{ color: s.color }}>
+                {s.delta}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="grid gap-5">
@@ -75,13 +165,12 @@ export default function Dashboard({ onSelectTicker, newsState, onRetryNews }) {
                   <th className="px-3 py-[11px] font-semibold">Giá</th>
                   <th className="px-3 py-[11px] font-semibold">+/-</th>
                   <th className="px-3 py-[11px] font-semibold">%</th>
-                  <th className="px-3 py-[11px] font-semibold">Khối lượng</th>
-                  <th className="px-5 py-[11px] font-semibold" />
+                  <th className="px-5 py-[11px] font-semibold">Khối lượng</th>
                 </tr>
               </thead>
               <tbody>
                 {WATCH.map((code) => (
-                  <WatchRow key={code} code={code} quote={quotes[code]} onSelect={onSelectTicker} />
+                  <WatchRow key={code} code={code} />
                 ))}
               </tbody>
             </table>
@@ -94,10 +183,10 @@ export default function Dashboard({ onSelectTicker, newsState, onRetryNews }) {
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <h2 className="m-0 text-base font-bold">Tin tức nổi bật</h2>
-              <span className="text-xs text-slate-400">Nguồn: CafeF · vietstock</span>
+              <span className="text-xs text-slate-400">Nguồn: CafeF</span>
             </div>
 
-            {newsState === 'error' && (
+            {effectiveNewsError && (
               <div className="px-5 py-[34px] text-center">
                 <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
                   <AlertCircle size={22} className="text-red-600" />
@@ -114,7 +203,7 @@ export default function Dashboard({ onSelectTicker, newsState, onRetryNews }) {
               </div>
             )}
 
-            {newsState === 'loading' && (
+            {effectiveNewsLoading && (
               <div className="px-5 pb-4 pt-2">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="border-t border-slate-100 py-3">
@@ -125,28 +214,23 @@ export default function Dashboard({ onSelectTicker, newsState, onRetryNews }) {
               </div>
             )}
 
-            {newsState === 'ready' && (
+            {effectiveNewsReady && (
               <div className="px-5 pb-2 pt-1">
-                {news.map((n) => (
-                  <div
-                    key={n.title}
-                    className="cursor-pointer border-t border-slate-100 py-[13px] transition-opacity hover:opacity-75"
+                {newsData.map((n, idx) => (
+                  <a
+                    key={idx}
+                    href={n.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block cursor-pointer border-t border-slate-100 py-[13px] transition-opacity hover:opacity-75"
                   >
-                    <div className="flex items-start gap-2.5">
-                      <span
-                        className="mt-0.5 flex-none rounded-[5px] px-[7px] py-0.5 text-[10.5px] font-bold"
-                        style={{ color: n.sentFg, background: n.sentBg }}
-                      >
-                        {n.sent}
-                      </span>
-                      <div>
-                        <div className="text-[13.5px] font-semibold leading-[1.4] text-slate-800">
-                          {n.title}
-                        </div>
-                        <div className="mt-[3px] text-[11.5px] text-slate-400">{n.meta}</div>
-                      </div>
+                    <div className="text-[13.5px] font-semibold leading-[1.4] text-slate-800">
+                      {n.title}
                     </div>
-                  </div>
+                    <div className="mt-[3px] text-[11.5px] text-slate-400">
+                      CafeF · {n.relative}
+                    </div>
+                  </a>
                 ))}
               </div>
             )}
@@ -163,10 +247,9 @@ export default function Dashboard({ onSelectTicker, newsState, onRetryNews }) {
             </div>
             <div className="px-3 pb-3 pt-1.5">
               {topAnalyzed.map((t) => (
-                <button
+                <div
                   key={t.code}
-                  onClick={() => onSelectTicker(t.code)}
-                  className="flex w-full items-center gap-3 rounded-[9px] px-2 py-[11px] text-left hover:bg-slate-50"
+                  className="flex w-full items-center gap-3 rounded-[9px] px-2 py-[11px] text-left"
                 >
                   <span className="tnum w-5 text-center text-[13px] font-extrabold text-slate-300">
                     {t.rank}
@@ -184,7 +267,7 @@ export default function Dashboard({ onSelectTicker, newsState, onRetryNews }) {
                   <span className="tnum text-[12.5px] font-bold" style={{ color: t.color }}>
                     {t.pct}
                   </span>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -194,19 +277,15 @@ export default function Dashboard({ onSelectTicker, newsState, onRetryNews }) {
   )
 }
 
-// Một dòng danh mục: dùng giá realtime nếu có, fallback về dữ liệu tĩnh.
-function WatchRow({ code, quote, onSelect }) {
+// Một dòng danh mục (số liệu tham khảo tĩnh).
+function WatchRow({ code }) {
   const s = STOCKS[code]
-  const price = quote ? quote.price : s.price
-  const pct = quote ? quote.pct : s.pct
-  const chg = quote ? quote.change : s.chg
+  const price = s.price
+  const pct = s.pct
+  const chg = s.chg
   const color = upDown(pct)
-  const flash = useFlash(quote?.price)
   return (
-    <tr
-      onClick={() => onSelect(code)}
-      className="cursor-pointer border-t border-slate-100 text-right hover:bg-slate-50"
-    >
+    <tr className="border-t border-slate-100 text-right">
       <td className="px-5 py-[13px] text-left">
         <div className="flex items-center gap-[11px]">
           <div
@@ -223,7 +302,7 @@ function WatchRow({ code, quote, onSelect }) {
           </div>
         </div>
       </td>
-      <td className={'tnum px-3 py-[13px] text-sm font-bold ' + flash}>{formatVND(price)}</td>
+      <td className="tnum px-3 py-[13px] text-sm font-bold">{formatVND(price)}</td>
       <td className="tnum px-3 py-[13px] text-[13px] font-semibold" style={{ color }}>
         {chgStr(chg)}
       </td>
@@ -235,14 +314,7 @@ function WatchRow({ code, quote, onSelect }) {
           {pctStr(pct)}
         </span>
       </td>
-      <td className="tnum px-3 py-[13px] text-[13px] text-slate-500">
-        {quote ? volShort(quote.volume) : s.vol}
-      </td>
-      <td className="px-5 py-[13px]">
-        <span className="whitespace-nowrap text-[12.5px] font-semibold text-blue-600">
-          Chi tiết ›
-        </span>
-      </td>
+      <td className="tnum px-5 py-[13px] text-[13px] text-slate-500">{s.vol}</td>
     </tr>
   )
 }
