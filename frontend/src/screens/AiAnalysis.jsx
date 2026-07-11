@@ -154,6 +154,66 @@ function Bubble({ role, text, sources, children }) {
   )
 }
 
+// Popup báo HẾT LƯỢT — hiện NGAY khi chạm hạn mức (HTTP 429) để người dùng biết liền,
+// thay vì chỉ một banner inline dễ bị bỏ sót. Đóng bằng nút ×, phím Esc hoặc bấm nền.
+function QuotaModal({ plan, limit, onUpgrade, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const planLabel = plan === 'pro' ? 'Pro' : plan === 'ultra' ? 'Ultra' : 'Free'
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+      >
+        <button
+          onClick={onClose}
+          title="Đóng"
+          className="absolute right-3 top-3 rounded-lg px-2 py-0.5 text-xl leading-none text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+        >
+          ×
+        </button>
+        <div className="flex justify-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+            <AlertCircle size={26} />
+          </div>
+        </div>
+        <h2 className="m-0 mt-4 text-center text-lg font-extrabold text-slate-900">
+          Đã hết lượt phân tích AI hôm nay
+        </h2>
+        <p className="m-0 mt-2 text-center text-sm leading-relaxed text-slate-600">
+          Bạn đã dùng hết {limit ? `${limit} ` : ''}lượt phân tích của gói <b>{planLabel}</b> hôm nay.
+          Nâng cấp để tăng hạn mức (<b>Pro</b> 15 lượt/ngày, <b>Ultra</b> không giới hạn) hoặc quay lại vào ngày mai.
+        </p>
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            onClick={onUpgrade}
+            className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+          >
+            <Sparkle size={16} />
+            Nâng cấp gói
+          </button>
+          <button
+            onClick={onClose}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          >
+            Để sau
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNavigate }) {
   const [ticker, setTicker] = useState('FPT')
   const [userContext, setUserContext] = useState('')
@@ -522,22 +582,17 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
         )}
       </div>
 
-      {/* hết lượt hôm nay → mời nâng cấp */}
+      {/* hết lượt hôm nay → popup mời nâng cấp, hiện ngay khi chạm hạn mức */}
       {quotaHit && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
-          <AlertCircle size={20} className="text-amber-600" />
-          <div className="min-w-[200px] flex-1 text-sm text-amber-800">
-            <b>Bạn đã dùng hết lượt phân tích AI hôm nay.</b> Nâng cấp gói để tăng hạn mức
-            (Pro 15 lượt/ngày, Ultra không giới hạn) hoặc quay lại vào ngày mai.
-          </div>
-          <button
-            onClick={() => onNavigate?.('pricing')}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            <Sparkle size={15} />
-            Nâng cấp gói
-          </button>
-        </div>
+        <QuotaModal
+          plan={plan}
+          limit={usage?.limit}
+          onUpgrade={() => {
+            setQuotaHit(false)
+            onNavigate?.('pricing')
+          }}
+          onClose={() => setQuotaHit(false)}
+        />
       )}
 
       {/* lỗi */}
