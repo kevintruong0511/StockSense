@@ -106,7 +106,7 @@ const FAQ = [
   },
   {
     q: 'StockSense có đưa ra khuyến nghị mua/bán không?',
-    a: 'Không. Công cụ tập trung phân tích định tính chất lượng doanh nghiệp và minh bạch nguồn dữ liệu. Mọi nội dung, kể cả do AI tạo, chỉ để tham khảo — không phải lời khuyên đầu tư.',
+    a: 'Có. Sau khi phân tích sâu chất lượng doanh nghiệp, dòng tiền và định giá, AI chốt khuyến nghị MUA / BÁN / GIỮ kèm độ tin cậy, vùng giá và thời gian nắm giữ — mọi dữ kiện đều minh bạch nguồn và trích dẫn link bấm được.',
   },
   {
     q: 'Thanh toán bằng cách nào?',
