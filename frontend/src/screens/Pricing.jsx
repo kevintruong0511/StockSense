@@ -159,7 +159,7 @@ function PromoBox({ onUpgraded }) {
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           onKeyDown={(e) => e.key === 'Enter' && apply()}
-          placeholder="Nhập mã (VD: BACUAKHANG)"
+          placeholder="Nhập mã ưu đãi"
           className="min-w-[200px] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase tracking-wide text-slate-900 outline-none focus:border-violet-500"
         />
         <button
