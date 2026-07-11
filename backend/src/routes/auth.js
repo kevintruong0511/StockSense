@@ -40,7 +40,7 @@ router.post('/register', async (req, res) => {
     const { rows } = await query(
       `INSERT INTO users (name, email, password_hash)
        VALUES ($1, $2, $3)
-       RETURNING id, name, email, created_at`,
+       RETURNING id, name, email, created_at, plan, plan_expires_at`,
       [name, email, passwordHash],
     )
     const user = rows[0]
@@ -79,7 +79,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const { rows } = await query(
-      'SELECT id, name, email, created_at FROM users WHERE id = $1',
+      'SELECT id, name, email, created_at, plan, plan_expires_at FROM users WHERE id = $1',
       [req.userId],
     )
     if (rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy người dùng.' })

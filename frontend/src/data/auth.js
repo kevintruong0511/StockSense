@@ -20,7 +20,8 @@ function fallbackMessage(status) {
 }
 
 // Gọi API, tự đính kèm Bearer token, và ném lỗi có message tiếng Việt từ server.
-async function api(path, { method = 'GET', body, auth = false } = {}) {
+// Export để các lớp data khác (billing…) tái dùng cùng cơ chế token + xử lý lỗi.
+export async function api(path, { method = 'GET', body, auth = false } = {}) {
   const headers = { 'Content-Type': 'application/json' }
   if (auth) {
     const token = getToken()

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { config } from './config.js'
+import { effectivePlan } from './billing/plans.js'
 
 const SALT_ROUNDS = 10
 
@@ -16,11 +17,14 @@ export const signToken = (user) =>
 export const verifyToken = (token) => jwt.verify(token, config.jwtSecret)
 
 // Chỉ trả những trường an toàn cho client — không bao giờ lộ password_hash.
+// plan là gói CÒN HIỆU LỰC (đã trừ hết hạn); planExpiresAt để client hiển thị mốc hết hạn.
 export const publicUser = (row) => ({
   id: row.id,
   name: row.name,
   email: row.email,
   createdAt: row.created_at,
+  plan: effectivePlan(row),
+  planExpiresAt: row.plan_expires_at ?? null,
 })
 
 // Middleware: yêu cầu Bearer token hợp lệ, gắn req.userId.

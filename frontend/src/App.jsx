@@ -6,11 +6,13 @@ import Auth from './screens/Auth.jsx'
 import Dashboard from './screens/Dashboard.jsx'
 import AiAnalysis from './screens/AiAnalysis.jsx'
 import Pricing from './screens/Pricing.jsx'
+import Checkout from './screens/Checkout.jsx'
 import { getToken, setToken, clearToken, fetchMe } from './data/auth.js'
 import { fetchAiStatus } from './data/ai.js'
+import { getBillingStatus } from './data/billing.js'
 
-// Màn cần đăng nhập: Dashboard + Phân tích AI. Landing công khai.
-const PROTECTED = ['dashboard', 'ai']
+// Màn cần đăng nhập: Dashboard + Phân tích AI + Thanh toán. Landing công khai.
+const PROTECTED = ['dashboard', 'ai', 'checkout']
 
 export default function App() {
   const [screen, setScreen] = useState('landing')
@@ -18,6 +20,8 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false)
   const [newsState, setNewsState] = useState('ready')
   const [aiEnabled, setAiEnabled] = useState(false)
+  const [billing, setBilling] = useState(null) // { plan, planExpiresAt, usage:{...} }
+  const [checkout, setCheckout] = useState({ plan: 'pro', cycle: 'monthly' })
 
   // Khôi phục phiên từ token đã lưu, rồi áp deep-link: ?screen=dashboard
   useEffect(() => {
@@ -36,7 +40,7 @@ export default function App() {
       if (restored) setUser(restored)
 
       const s = new URLSearchParams(window.location.search).get('screen')
-      const valid = ['landing', 'dashboard', 'ai', 'pricing']
+      const valid = ['landing', 'dashboard', 'ai', 'pricing', 'checkout']
       // Chỉ mở màn cần đăng nhập khi phiên hợp lệ; nếu không sẽ về màn đăng nhập.
       if (s && valid.includes(s) && (restored || !PROTECTED.includes(s))) {
         setScreen(s)
@@ -64,8 +68,46 @@ export default function App() {
     }
   }, [user])
 
+  // ---------- gói cước & hạn mức ----------
+  const refreshBilling = useCallback(async () => {
+    try {
+      setBilling(await getBillingStatus())
+    } catch {
+      /* im lặng — badge lượt chỉ là phụ trợ */
+    }
+  }, [])
+
+  // Đồng bộ lại user (để có plan mới sau khi nâng cấp) + hạn mức.
+  const refreshUser = useCallback(async () => {
+    try {
+      const { user: u } = await fetchMe()
+      setUser(u)
+    } catch {
+      /* giữ nguyên user hiện tại nếu lỗi */
+    }
+  }, [])
+
+  const onUpgraded = useCallback(async () => {
+    await Promise.all([refreshUser(), refreshBilling()])
+  }, [refreshUser, refreshBilling])
+
+  // Nạp hạn mức mỗi khi có phiên đăng nhập; xoá khi đăng xuất.
+  useEffect(() => {
+    if (!user) {
+      setBilling(null)
+      return
+    }
+    refreshBilling()
+  }, [user, refreshBilling])
+
   // ---------- navigation ----------
   const go = useCallback((s) => setScreen(s), [])
+
+  // Mở màn thanh toán cho 1 gói + chu kỳ.
+  const goCheckout = useCallback((plan, cycle = 'monthly') => {
+    setCheckout({ plan, cycle })
+    setScreen('checkout')
+  }, [])
 
   // Chặn vào màn cần đăng nhập khi chưa có phiên → chuyển sang màn đăng nhập.
   const guard = useCallback(
@@ -141,6 +183,7 @@ export default function App() {
         onNavigate={go}
         onLogo={() => go('landing')}
         user={user}
+        billing={billing}
         onLogout={onLogout}
       />
 
@@ -148,9 +191,28 @@ export default function App() {
         <TopBar />
         <div className="flex-1 px-8 pb-12 pt-7">
           {screen === 'ai' ? (
-            <AiAnalysis aiEnabled={aiEnabled} />
+            <AiAnalysis
+              aiEnabled={aiEnabled}
+              billing={billing}
+              onRefreshBilling={refreshBilling}
+              onNavigate={go}
+            />
+          ) : screen === 'checkout' ? (
+            <Checkout
+              plan={checkout.plan}
+              cycle={checkout.cycle}
+              onBack={() => go('pricing')}
+              onUpgraded={onUpgraded}
+              onNavigate={go}
+            />
           ) : screen === 'pricing' ? (
-            <Pricing variant="app" user={user} currentPlan="free" />
+            <Pricing
+              variant="app"
+              user={user}
+              currentPlan={user?.plan || 'free'}
+              onCheckout={goCheckout}
+              onUpgraded={onUpgraded}
+            />
           ) : (
             <Dashboard newsState={newsState} onRetryNews={retryNews} />
           )}

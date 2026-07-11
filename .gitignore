@@ -6,6 +6,8 @@
 # ─── Docs / project metadata ───
 docs/
 CLAUDE.md
+ARCHITECTURE.md
+ARCHITECTURE.html
 "StockSense VN (standalone).html"
 
 # ─── Node_modules ───

@@ -4,6 +4,7 @@ import { config } from './config.js'
 import authRoutes from './routes/auth.js'
 import stockRoutes from './routes/stocks.js'
 import aiRoutes from './routes/ai.js'
+import billingRoutes from './routes/billing.js'
 
 const app = express()
 
@@ -14,6 +15,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }))
 app.use('/api/auth', authRoutes)
 app.use('/api/stocks', stockRoutes)
 app.use('/api/ai', aiRoutes)
+app.use('/api/billing', billingRoutes)
 
 // Bắt lỗi JSON hỏng và các lỗi chưa xử lý.
 app.use((err, _req, res, _next) => {

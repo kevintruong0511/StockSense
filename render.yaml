@@ -28,6 +28,20 @@ services:
         value: https://stocksense.vercel.app
       - key: MARKET_PROVIDER
         value: simulated
+      # ── Phân tích AI: DeepSeek (endpoint tương thích Anthropic) ──
+      - key: DEEPSEEK_API_KEY
+        sync: false           # khóa sk-... — điền thủ công trên Render dashboard
+      - key: DEEPSEEK_MODEL
+        value: deepseek-v4-pro
+      - key: DEEPSEEK_BASE_URL
+        value: https://api.deepseek.com/anthropic
+      - key: AI_WEB_SEARCH
+        value: "true"
+      # ── (Tùy chọn) Thanh toán SePay — chỉ cần khi bật gói trả phí ──
+      - key: SEPAY_ACCOUNT
+        sync: false
+      - key: SEPAY_WEBHOOK_API_KEY
+        sync: false
 
   # Chạy migration DB 1 lần rồi tắt (ephemeral)
   - type: job

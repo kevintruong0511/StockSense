@@ -43,7 +43,7 @@ export default function Landing({ onLogin, onPricing, onStart, onSelectTicker })
       <section className="mx-auto w-full max-w-[1000px] px-10 pb-10 pt-14 text-center">
         <div className="mb-[26px] inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3.5 py-1.5 text-[13px] font-semibold text-blue-600">
           <Sparkle size={15} />
-          Phân tích định tính bằng Claude AI
+          Phân tích định tính bằng AI
         </div>
         <h1 className="m-0 mb-5 text-[56px] font-extrabold leading-[1.05] tracking-[-0.03em] [text-wrap:balance] max-md:text-[40px]">
           Hiểu sâu cổ phiếu Việt

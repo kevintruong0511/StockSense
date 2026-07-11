@@ -58,7 +58,7 @@ export default function Auth({ mode: initialMode = 'login', onSuccess, onLogo })
         <div>
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-[13px] font-semibold text-blue-300">
             <Sparkle size={15} />
-            Phân tích định tính bằng Claude AI
+            Phân tích định tính bằng AI
           </div>
           <h2 className="m-0 mb-6 max-w-[420px] text-[34px] font-extrabold leading-[1.2] tracking-[-0.02em]">
             Hiểu sâu doanh nghiệp trước khi xuống tiền

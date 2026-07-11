@@ -2,10 +2,36 @@
 // Hỗ trợ: tiêu đề #, in đậm **, in nghiêng *, code `, gạch đầu dòng - / *,
 // danh sách số 1. , đường kẻ ---, và bảng | ... | (kể cả bảng không có dòng ngăn).
 
-// ---- inline: **đậm**, *nghiêng*, `code` ----
+// Chip nguồn inline (favicon + tên miền), chèn ngay sau câu AI trích dẫn.
+// Được sinh từ marker ⟦tên-miền|url⟧ mà data/ai.js chèn vào text theo citation.
+function CiteChip({ domain, url }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      title={url}
+      className="mx-0.5 inline-flex translate-y-px items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 align-baseline text-[10.5px] font-medium text-slate-500 no-underline hover:bg-slate-100 hover:text-slate-700"
+    >
+      <img
+        src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
+        alt=""
+        width={11}
+        height={11}
+        className="rounded-[2px]"
+        onError={(e) => {
+          e.currentTarget.style.display = 'none'
+        }}
+      />
+      {domain}
+    </a>
+  )
+}
+
+// ---- inline: **đậm**, *nghiêng*, `code`, [text](url), ⟦domain|url⟧ (chip nguồn) ----
 function parseInline(text) {
   const nodes = []
-  const re = /(\*\*([^*]+)\*\*|\*([^*\n]+)\*|`([^`]+)`)/
+  const re = /(\*\*([^*]+)\*\*|\*([^*\n]+)\*|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|⟦([^|⟧]+)\|(https?:\/\/[^⟧]+)⟧)/
   let rest = text
   let k = 0
   while (rest) {
@@ -18,6 +44,8 @@ function parseInline(text) {
     if (m[2] !== undefined) nodes.push(<strong key={k++} className="font-semibold text-slate-900">{m[2]}</strong>)
     else if (m[3] !== undefined) nodes.push(<em key={k++}>{m[3]}</em>)
     else if (m[4] !== undefined) nodes.push(<code key={k++} className="rounded bg-slate-100 px-1 py-0.5 text-[12px] text-slate-700">{m[4]}</code>)
+    else if (m[5] !== undefined) nodes.push(<a key={k++} href={m[6]} target="_blank" rel="noreferrer" className="text-blue-600 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-600">{m[5]}</a>)
+    else if (m[7] !== undefined) nodes.push(<CiteChip key={k++} domain={m[7]} url={m[8]} />)
     rest = rest.slice(m.index + m[0].length)
   }
   return nodes

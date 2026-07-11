@@ -30,8 +30,9 @@ export async function fetchTickers() {
 }
 
 // Gửi hội thoại và stream kết quả. Trả về hàm abort().
-// Callbacks: onToken(text), onDone(), onError(message).
-export function streamAnalyze({ ticker, stock, userContext, messages, onToken, onDone, onError }) {
+// Callbacks: onSession({id,title}), onToken(text), onCitation({url,title,cited_text}),
+// onSources([{url,title}]), onStatus({phase,query}), onReset(), onDone(), onError(message).
+export function streamAnalyze({ ticker, stock, userContext, messages, sessionId, onSession, onToken, onCitation, onSources, onStatus, onReset, onDone, onError }) {
   const controller = new AbortController()
   const token = getToken()
 
@@ -45,23 +46,26 @@ export function streamAnalyze({ ticker, stock, userContext, messages, onToken, o
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ ticker, stock, userContext, messages }),
+        body: JSON.stringify({ ticker, stock, userContext, messages, sessionId }),
       })
     } catch {
       onError?.('Không thể kết nối tới máy chủ. Kiểm tra kết nối mạng rồi thử lại.')
       return
     }
 
-    // Lỗi trước khi stream (401/400/503…) — thường trả JSON.
+    // Lỗi trước khi stream (401/400/429/503…) — thường trả JSON.
     if (!res.ok || !res.body) {
       let msg = `Có lỗi xảy ra (HTTP ${res.status}).`
+      let code = null
       try {
         const data = await res.json()
         if (data?.error) msg = data.error
+        if (data?.code) code = data.code
       } catch {
         /* để nguyên msg mặc định */
       }
-      onError?.(msg)
+      // meta.code === 'quota_exceeded' khi hết lượt (HTTP 429) để UI hiện nút nâng cấp.
+      onError?.(msg, { status: res.status, code })
       return
     }
 
@@ -87,7 +91,12 @@ export function streamAnalyze({ ticker, stock, userContext, messages, onToken, o
           } catch {
             continue
           }
-          if (evt.type === 'token') onToken?.(evt.text || '')
+          if (evt.type === 'session') onSession?.({ id: evt.id, title: evt.title })
+          else if (evt.type === 'token') onToken?.(evt.text || '')
+          else if (evt.type === 'citation') onCitation?.(evt)
+          else if (evt.type === 'sources') onSources?.(Array.isArray(evt.items) ? evt.items : [])
+          else if (evt.type === 'status') onStatus?.({ phase: evt.phase, query: evt.query || '' })
+          else if (evt.type === 'reset') onReset?.()
           else if (evt.type === 'done') {
             onDone?.()
             return

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Sparkle, Check, ArrowRight, InfoCircle, Search, BarChart3 } from '../components/icons.jsx'
+import { redeemCode } from '../data/billing.js'
 
 // Định dạng số tiền kiểu Việt Nam (ngăn cách nghìn bằng dấu chấm).
 const fmt = (n) => n.toLocaleString('vi-VN')
@@ -24,7 +25,7 @@ const PLANS = [
     features: [
       'Giá & biểu đồ nến thời gian thực',
       'Tổng quan thị trường & tin tức',
-      '3 lượt phân tích AI mỗi ngày',
+      '2 lượt phân tích AI mỗi ngày',
       'Chỉ số định giá cơ bản (P/E, P/B, ROE)',
       'So sánh tối đa 2 mã cùng ngành',
     ],
@@ -46,7 +47,7 @@ const PLANS = [
     },
     features: [
       'Mọi thứ trong gói Free',
-      'Phân tích AI không giới hạn',
+      '15 lượt phân tích AI mỗi ngày',
       'Model AI cao cấp, phân tích nâng cao',
       'Xuất báo cáo phân tích ra PDF',
       'Tải lên & tóm tắt BCTC (PDF)',
@@ -71,6 +72,7 @@ const PLANS = [
     },
     features: [
       'Mọi thứ trong gói Pro',
+      'Phân tích AI không giới hạn',
       'Model AI mạnh nhất (deep research)',
       'Phân tích chuyên sâu ngành + vĩ mô',
       'Truy cập API dữ liệu',
@@ -85,7 +87,7 @@ const PLANS = [
 const COMPARE = [
   { label: 'Giá & biểu đồ nến thời gian thực', free: true, pro: true, ultra: true },
   { label: 'Tổng quan thị trường & tin tức', free: true, pro: true, ultra: true },
-  { label: 'Lượt phân tích AI', free: '3 / ngày', pro: 'Không giới hạn', ultra: 'Không giới hạn' },
+  { label: 'Lượt phân tích AI', free: '2 / ngày', pro: '15 / ngày', ultra: 'Không giới hạn' },
   { label: 'Chiều sâu phân tích', free: 'Cơ bản', pro: 'Nâng cao', ultra: 'Chuyên sâu + vĩ mô' },
   { label: 'Model AI', free: 'Tiêu chuẩn', pro: 'Cao cấp', ultra: 'Mạnh nhất (deep research)' },
   { label: 'Xuất báo cáo PDF', free: false, pro: true, ultra: true },
@@ -108,7 +110,7 @@ const FAQ = [
   },
   {
     q: 'Thanh toán bằng cách nào?',
-    a: 'Hỗ trợ thẻ nội địa, Visa/Mastercard và chuyển khoản ngân hàng. Có thể xuất hoá đơn VAT theo yêu cầu.',
+    a: 'Quét mã QR (VietQR) bằng app ngân hàng bất kỳ để chuyển khoản. Hệ thống tự nhận diện giao dịch và nâng gói cho bạn trong vài giây, không cần thao tác thủ công. Có mã ưu đãi thì nhập ở ô "Mã ưu đãi".',
   },
 ]
 
@@ -122,6 +124,63 @@ function CompareCell({ value }) {
     )
   if (value === false) return <span className="text-slate-300">—</span>
   return <span className="text-[13px] font-semibold text-slate-700">{value}</span>
+}
+
+// Ô nhập mã ưu đãi → gọi redeem, nâng gói ngay (vd BACUAKHANG → Ultra).
+function PromoBox({ onUpgraded }) {
+  const [code, setCode] = useState('')
+  const [status, setStatus] = useState('idle') // idle | loading | ok | err
+  const [msg, setMsg] = useState('')
+
+  const apply = async () => {
+    const c = code.trim()
+    if (!c || status === 'loading') return
+    setStatus('loading')
+    setMsg('')
+    try {
+      const r = await redeemCode(c)
+      setStatus('ok')
+      setMsg(r?.message || 'Đã kích hoạt gói mới.')
+      await onUpgraded?.()
+    } catch (e) {
+      setStatus('err')
+      setMsg(e?.message || 'Không áp dụng được mã ưu đãi.')
+    }
+  }
+
+  return (
+    <div className="mx-auto mb-6 max-w-[720px] rounded-xl border border-slate-200 bg-white px-4 py-3.5">
+      <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-slate-700">
+        <Sparkle size={15} className="text-violet-600" />
+        Có mã ưu đãi?
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          onKeyDown={(e) => e.key === 'Enter' && apply()}
+          placeholder="Nhập mã (VD: BACUAKHANG)"
+          className="min-w-[200px] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase tracking-wide text-slate-900 outline-none focus:border-violet-500"
+        />
+        <button
+          onClick={apply}
+          disabled={status === 'loading' || !code.trim()}
+          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {status === 'loading' ? 'Đang áp dụng…' : 'Áp dụng'}
+        </button>
+      </div>
+      {msg && (
+        <div
+          className={
+            'mt-2 text-[13px] font-medium ' + (status === 'ok' ? 'text-green-600' : 'text-red-600')
+          }
+        >
+          {msg}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function PlanCard({ plan, annual, currentPlan, onChoose }) {
@@ -202,9 +261,27 @@ function PlanCard({ plan, annual, currentPlan, onChoose }) {
   )
 }
 
-export default function Pricing({ variant = 'app', currentPlan = 'free', user, onBack, onLogin }) {
+export default function Pricing({
+  variant = 'app',
+  currentPlan = 'free',
+  user,
+  onBack,
+  onLogin,
+  onCheckout,
+  onUpgraded,
+}) {
   const [annual, setAnnual] = useState(false)
-  const [chosen, setChosen] = useState(null)
+
+  // Chọn gói: Free không cần thanh toán; gói trả phí → mở checkout (nếu đã đăng nhập)
+  // hoặc yêu cầu đăng nhập trước (trang công khai cho khách).
+  const handleChoose = (plan) => {
+    if (plan.key === 'free') {
+      if (!onCheckout) onLogin?.()
+      return
+    }
+    if (onCheckout) onCheckout(plan.key, 'monthly')
+    else onLogin?.()
+  }
 
   const content = (
     <div className="mx-auto w-full max-w-[1080px]">
@@ -253,25 +330,8 @@ export default function Pricing({ variant = 'app', currentPlan = 'free', user, o
         </div>
       </div>
 
-      {/* xác nhận đã chọn gói (chưa có cổng thanh toán) */}
-      {chosen && (
-        <div className="mx-auto mb-6 flex max-w-[720px] items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5 text-sm text-blue-900">
-          <Sparkle size={18} className="mt-px flex-none text-blue-600" />
-          <div className="flex-1">
-            Bạn đã chọn <b>gói {chosen.name}</b> (
-            {fmt(annual ? chosen.annualPerMonth : chosen.monthly)}₫/tháng). Cổng thanh toán đang được
-            hoàn thiện — chúng tôi sẽ liên hệ qua{' '}
-            <b>{user?.email || 'email của bạn'}</b> khi sẵn sàng.
-          </div>
-          <button
-            onClick={() => setChosen(null)}
-            className="flex-none rounded-md px-1 text-blue-500 hover:text-blue-700"
-            aria-label="Đóng"
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      {/* mã ưu đãi — chỉ hiện khi đã đăng nhập (redeem cần phiên) */}
+      {onUpgraded && <PromoBox onUpgraded={onUpgraded} />}
 
       {/* 3 thẻ gói */}
       <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-3">
@@ -281,7 +341,7 @@ export default function Pricing({ variant = 'app', currentPlan = 'free', user, o
             plan={plan}
             annual={annual}
             currentPlan={currentPlan}
-            onChoose={setChosen}
+            onChoose={handleChoose}
           />
         ))}
       </div>

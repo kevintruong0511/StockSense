@@ -13,7 +13,17 @@ function initials(name = '') {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-export default function Sidebar({ screen, onNavigate, onLogo, user, onLogout }) {
+const PLAN_LABEL = { free: 'Free', pro: 'Pro', ultra: 'Ultra' }
+
+export default function Sidebar({ screen, onNavigate, onLogo, user, billing, onLogout }) {
+  const plan = billing?.plan || user?.plan || 'free'
+  const usage = billing?.usage
+  const isUltra = plan === 'ultra'
+  const quotaText = usage
+    ? usage.unlimited
+      ? 'Không giới hạn lượt AI'
+      : `Còn ${usage.remaining}/${usage.limit} lượt AI hôm nay`
+    : ''
   return (
     <aside className="sticky top-0 flex h-screen w-[236px] flex-none flex-col bg-slate-900 text-slate-300">
       {/* logo */}
@@ -46,22 +56,38 @@ export default function Sidebar({ screen, onNavigate, onLogo, user, onLogout }) 
         })}
       </nav>
 
-      {/* footer: Pro card + user */}
+      {/* footer: thẻ gói + user */}
       <div className="mt-auto p-3.5">
-        <div className="rounded-xl border border-blue-600/25 bg-blue-600/10 p-3.5">
-          <div className="mb-1.5 flex items-center gap-2 text-[12.5px] font-bold text-blue-300">
+        <div
+          className={
+            'rounded-xl border p-3.5 ' +
+            (isUltra ? 'border-violet-500/30 bg-violet-500/10' : 'border-blue-600/25 bg-blue-600/10')
+          }
+        >
+          <div
+            className={
+              'mb-1.5 flex items-center gap-2 text-[12.5px] font-bold ' +
+              (isUltra ? 'text-violet-300' : 'text-blue-300')
+            }
+          >
             <Sparkle size={15} />
-            Gói Pro
+            Gói {PLAN_LABEL[plan] || 'Free'}
           </div>
           <p className="m-0 mb-2.5 text-xs leading-relaxed text-slate-400">
-            Phân tích AI không giới hạn + xuất PDF
+            {quotaText || 'Phân tích cổ phiếu có AI hỗ trợ'}
           </p>
-          <button
-            onClick={() => onNavigate('pricing')}
-            className="w-full rounded-lg bg-blue-600 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-blue-700"
-          >
-            Nâng cấp
-          </button>
+          {isUltra ? (
+            <div className="rounded-lg bg-violet-500/15 py-2 text-center text-[12.5px] font-semibold text-violet-200">
+              Đang dùng gói cao nhất ✦
+            </div>
+          ) : (
+            <button
+              onClick={() => onNavigate('pricing')}
+              className="w-full rounded-lg bg-blue-600 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-blue-700"
+            >
+              Nâng cấp
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2.5 px-1 pt-3">
           <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-slate-700 text-[13px] font-bold text-white">
