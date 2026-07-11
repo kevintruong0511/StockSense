@@ -32,7 +32,7 @@ export async function fetchTickers() {
 // Gửi hội thoại và stream kết quả. Trả về hàm abort().
 // Callbacks: onSession({id,title}), onToken(text), onCitation({url,title,cited_text}),
 // onSources([{url,title}]), onStatus({phase,query}), onReset(), onDone(), onError(message).
-export function streamAnalyze({ ticker, stock, userContext, messages, sessionId, onSession, onToken, onCitation, onSources, onStatus, onReset, onDone, onError }) {
+export function streamAnalyze({ ticker, stock, userContext, messages, sessionId, model, onSession, onToken, onCitation, onSources, onStatus, onReset, onDone, onError }) {
   const controller = new AbortController()
   const token = getToken()
 
@@ -46,7 +46,7 @@ export function streamAnalyze({ ticker, stock, userContext, messages, sessionId,
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ ticker, stock, userContext, messages, sessionId }),
+        body: JSON.stringify({ ticker, stock, userContext, messages, sessionId, model }),
       })
     } catch {
       onError?.('Không thể kết nối tới máy chủ. Kiểm tra kết nối mạng rồi thử lại.')

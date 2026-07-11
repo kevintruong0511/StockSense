@@ -24,3 +24,21 @@ export function effectivePlan(userRow) {
 export function dailyLimit(plan) {
   return PLAN_LIMITS[plan] ?? PLAN_LIMITS.free
 }
+
+// Bậc model AI được phép theo gói. Free chỉ 'flash'; Pro/Ultra có thêm 'pro'.
+export const PLAN_MODELS = {
+  free: ['flash'],
+  pro: ['flash', 'pro'],
+  ultra: ['flash', 'pro'],
+}
+
+export function allowedModelTiers(plan) {
+  return PLAN_MODELS[plan] || PLAN_MODELS.free
+}
+
+// Chốt bậc model được dùng: nếu bậc yêu cầu không nằm trong quyền của gói → ép về 'flash'.
+// Đây là chốt CHÂN LÝ ở backend — Free không thể "lách" để dùng model pro.
+export function resolveModelTier(plan, requested) {
+  const allowed = allowedModelTiers(plan)
+  return allowed.includes(requested) ? requested : 'flash'
+}

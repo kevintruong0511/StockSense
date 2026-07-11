@@ -17,7 +17,10 @@ export const config = {
     baseUrl: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/anthropic',
     apiKey: process.env.DEEPSEEK_API_KEY || '',
     // deepseek-v4-pro (map từ opus) = bản mạnh nhất, hợp phân tích sâu. .env/Render env đè lên.
+    // Gói Pro/Ultra được chọn model 'pro' này; Free luôn dùng 'flash' bên dưới.
     model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-pro',
+    // Bản FLASH (rẻ/nhanh hơn) — mặc định cho Free; đổi ID thật qua env nếu khác.
+    modelFlash: process.env.DEEPSEEK_MODEL_FLASH || 'deepseek-v4-flash',
     // Trần token OUTPUT/lượt. Để rộng, tránh cắt giữa chừng. Đang STREAM nên max_tokens
     // lớn không gây timeout; chỉ TRẢ TIỀN token thực sinh ra, không phải cả trần.
     maxTokens: Number(process.env.AI_MAX_TOKENS) || 16000,

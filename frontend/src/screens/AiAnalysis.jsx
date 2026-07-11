@@ -92,6 +92,45 @@ function StatusIndicator({ status }) {
   )
 }
 
+// Nút chọn model AI (Flash / Pro). Free bị khóa ở Flash (nút Pro disabled + 🔒).
+// Dùng ở cả thanh nhập mã và thanh "Hỏi thêm" để luôn thấy/đổi được model.
+function ModelToggle({ model, canPro, disabled, onPick, compact = false }) {
+  const size = compact ? 'px-2 py-1 text-[11.5px]' : 'px-2.5 py-1.5 text-[12.5px]'
+  const label = (m) => (compact ? '' : 'V4 ') + m
+  return (
+    <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+      <button
+        type="button"
+        onClick={() => onPick('flash')}
+        disabled={disabled}
+        title="DeepSeek V4 Flash — nhanh, tiết kiệm"
+        className={
+          `rounded-md ${size} font-semibold transition-colors disabled:cursor-not-allowed ` +
+          (model === 'flash' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800')
+        }
+      >
+        {label('Flash')}
+      </button>
+      <button
+        type="button"
+        onClick={() => canPro && onPick('pro')}
+        disabled={disabled || !canPro}
+        title={canPro ? 'DeepSeek V4 Pro — phân tích sâu nhất' : 'Chỉ dành cho gói Pro/Ultra — nâng cấp để dùng'}
+        className={
+          `flex items-center gap-1 rounded-md ${size} font-semibold transition-colors ` +
+          (!canPro
+            ? 'cursor-not-allowed text-slate-400'
+            : model === 'pro'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 hover:text-slate-800')
+        }
+      >
+        {label('Pro')} {!canPro && <span aria-hidden>🔒</span>}
+      </button>
+    </div>
+  )
+}
+
 // Bong bóng hội thoại. Assistant render markdown + danh sách nguồn; user giữ văn bản thô.
 // `children` (nếu có) dùng cho trạng thái đang stream/placeholder.
 function Bubble({ role, text, sources, children }) {
@@ -130,7 +169,11 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
   const [universe, setUniverse] = useState([]) // toàn bộ mã niêm yết (gợi ý)
   const [sessions, setSessions] = useState([]) // danh sách phiên chat (panel trái)
   const [activeSessionId, setActiveSessionId] = useState(null) // phiên đang mở (null = phiên mới)
+  const [model, setModel] = useState('flash') // bậc model AI cho lượt phân tích: 'flash' | 'pro'
+  const userPickedModelRef = useRef(false) // user đã tự chọn model chưa (để không tự đổi đè)
 
+  const plan = billing?.plan || 'free'
+  const canProModel = plan === 'pro' || plan === 'ultra' // chỉ Pro/Ultra được dùng model Pro
   const usage = billing?.usage
   // Nhãn hạn mức: unlimited = Ultra (không giới hạn); còn lại hiện "còn X/N lượt".
   const quotaLabel = usage
@@ -149,6 +192,17 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
   useEffect(() => {
     refreshSessions()
   }, [])
+
+  // Mặc định model theo gói: Free luôn Flash (bị khóa); Pro/Ultra mặc định Pro cho tới khi tự đổi.
+  useEffect(() => {
+    if (!canProModel) setModel('flash')
+    else if (!userPickedModelRef.current) setModel('pro')
+  }, [canProModel])
+
+  const pickModel = (m) => {
+    userPickedModelRef.current = true
+    setModel(m)
+  }
 
   // Mở lại một phiên cũ: nạp toàn bộ tin nhắn từ server.
   async function openSession(id) {
@@ -243,6 +297,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
       userContext: userContext.trim() || undefined,
       messages: msgs,
       sessionId: activeSessionId || undefined,
+      model, // backend vẫn kẹp lại theo gói — đây chỉ là lựa chọn của user
       onSession: ({ id }) => {
         // Backend trả về id phiên (nhất là phiên mới vừa tạo) → gắn active + cập nhật panel.
         if (id) setActiveSessionId(id)
@@ -418,6 +473,12 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
             <TickerPicker value={ticker} onChange={setTicker} universe={universe} onEnter={startAnalyze} />
           </label>
 
+          {/* chọn model AI — Free bị khóa ở Flash */}
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-slate-500">Model AI</span>
+            <ModelToggle model={model} canPro={canProModel} disabled={streaming} onPick={pickModel} />
+          </label>
+
           <button
             onClick={startAnalyze}
             disabled={streaming}
@@ -519,6 +580,9 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
       {/* ô hỏi tiếp */}
       {hasConversation && (
         <div className="sticky bottom-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-md">
+          <div className="hidden sm:block">
+            <ModelToggle model={model} canPro={canProModel} disabled={streaming} onPick={pickModel} compact />
+          </div>
           <input
             value={question}
             onChange={(e) => setQuestion(e.target.value)}

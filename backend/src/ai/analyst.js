@@ -203,6 +203,7 @@ const FORCE_WRITE_PROMPT =
 export async function streamMessages({
   system,
   messages,
+  model,
   onText,
   onCitation,
   onSource,
@@ -210,6 +211,8 @@ export async function streamMessages({
   onReset,
   signal,
 }) {
+  // Model đã được backend chốt theo gói (routes/ai.js); fallback về model mặc định.
+  const modelId = model || config.ai.model
   // DÙNG BIẾN THỂ CƠ BẢN web_search_20250305 — endpoint tương thích Anthropic của
   // DeepSeek nhận tool này và trả về block web_search_tool_result chứa URL nguồn.
   const tools = [];
@@ -241,7 +244,7 @@ export async function streamMessages({
     while (true) {
       const stream = client().messages.stream(
         {
-          model: config.ai.model,
+          model: modelId,
           max_tokens: config.ai.maxTokens,
           system,
           messages: msgs,

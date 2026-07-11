@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { requireAuth } from '../auth.js'
 import { config } from '../config.js'
 import { query } from '../db.js'
-import { dailyLimit, effectivePlan } from '../billing/plans.js'
+import { dailyLimit, effectivePlan, resolveModelTier } from '../billing/plans.js'
 import { consume, getUsage } from '../billing/usage.js'
 import { getMarketNews, getMarketOverview } from '../market/marketOverview.js'
 import { getStockSnapshot, getTickerUniverse } from '../market/stockData.js'
@@ -136,6 +136,8 @@ router.post('/analyze', async (req, res) => {
 
   // Giới hạn lượt theo gói (Free 2 / Pro 15 / Ultra không giới hạn) — mỗi request trừ 1 lượt.
   // Kiểm tra TRƯỚC khi gọi mạng lấy dữ liệu để không phí công khi đã hết lượt.
+  // Đồng thời CHỐT MODEL theo gói: Free luôn flash; Pro/Ultra được chọn pro.
+  let modelId = config.ai.modelFlash
   try {
     const { rows } = await query('SELECT plan, plan_expires_at FROM users WHERE id = $1', [req.userId])
     const plan = effectivePlan(rows[0])
@@ -152,6 +154,9 @@ router.post('/analyze', async (req, res) => {
         })
       }
     }
+    // Bậc model yêu cầu ('flash'|'pro') bị kẹp theo quyền của gói.
+    const tier = resolveModelTier(plan, req.body?.model)
+    modelId = tier === 'pro' ? config.ai.model : config.ai.modelFlash
     await consume(req.userId)
   } catch (err) {
     console.error('[ai:quota]', err)
@@ -235,6 +240,7 @@ router.post('/analyze', async (req, res) => {
     await streamMessages({
       system,
       messages: safeMessages,
+      model: modelId,
       signal: ac.signal,
       onText: (text) => {
         if (text) {
