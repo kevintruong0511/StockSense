@@ -317,15 +317,31 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
   const citedCountRef = useRef(0) // số chip inline đã chèn (để quyết định có hiện list fallback)
   const abortRef = useRef(null)
   const bottomRef = useRef(null)
+  const stickBottomRef = useRef(true) // chỉ tự cuộn khi user đang ở gần đáy
+
+  // Theo dõi vị trí cuộn của trang: user cuộn lên → tắt auto-scroll để họ đọc phần trên;
+  // cuộn về gần đáy → bật lại. Nhờ vậy AI đang viết không kéo trang xuống ngang người dùng.
+  useEffect(() => {
+    const onScroll = () => {
+      const el = document.documentElement
+      const distance = el.scrollHeight - (window.scrollY + window.innerHeight)
+      stickBottomRef.current = distance < 120
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    if (!stickBottomRef.current) return
+    // cuộn tức thời (không 'smooth') để bám đáy khi token tới nhanh, tránh giật/nhảy sai
+    bottomRef.current?.scrollIntoView({ block: 'end' })
   }, [chat, live])
 
   useEffect(() => () => abortRef.current?.(), []) // hủy stream khi rời màn
 
   function runSend(text, baseChat) {
     if (streaming || !text.trim()) return
+    stickBottomRef.current = true // gửi câu mới → bám đáy trở lại để thấy câu hỏi + trả lời
     setError('')
     setQuotaHit(false)
     const msgs = [...baseChat, { role: 'user', content: text }]
