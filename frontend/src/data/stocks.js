@@ -74,6 +74,21 @@ export function aiSource(ticker) {
   return AI_SOURCE[ticker] || AI_SOURCE.FPT
 }
 
+// ---------- badge màu logo cho mã ----------
+// Lấy từ STOCKS nếu có; nếu không sinh màu ổn định theo mã (dùng cho mọi mã VN30/khác).
+const BADGE_PALETTE = [
+  ['#EFF6FF', '#2563EB'], ['#F0FDF4', '#16A34A'], ['#FEF2F2', '#DC2626'], ['#FFF7ED', '#EA580C'],
+  ['#F5F3FF', '#7C3AED'], ['#EEF2FF', '#4F46E5'], ['#ECFEFF', '#0891B2'], ['#FDF4FF', '#C026D3'],
+]
+export function tickerBadge(code) {
+  const s = STOCKS[code]
+  if (s) return { bg: s.logoBg, fg: s.logoFg }
+  let h = 0
+  for (const c of String(code || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  const [bg, fg] = BADGE_PALETTE[h % BADGE_PALETTE.length]
+  return { bg, fg }
+}
+
 // ---------- formatting helpers ----------
 export const formatVND = (n) => n.toLocaleString('vi-VN')
 export const upDown = (p) => (p >= 0 ? '#16A34A' : '#DC2626')

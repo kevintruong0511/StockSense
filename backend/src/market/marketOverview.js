@@ -1,4 +1,6 @@
 // Dữ liệu tổng quan thị trường: VN-Index + số mã tăng/giảm/đứng giá.
+import { VN30 } from './priceBoard.js'
+
 const TIMEOUT_MS = 7000
 
 async function fetchJson(url) {
@@ -12,10 +14,9 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
-// Số mã tăng/giảm/đứng giá: gọi batch change_prices (max ~20 mã一次) rồi đếm.
-// Ticker cố định của app.
-const WATCH_ALL = ['FPT', 'HPG', 'VNM', 'VCB', 'MWG', 'CMG', 'ELC', 'SSI', 'VIC', 'BID',
-  'TCB', 'MBB', 'ACB', 'CTG', 'STB', 'PNJ', 'GAS', 'PLX', 'oil']
+// Số mã tăng/giảm/đứng giá tính trên rổ VN30 (breadth toàn sàn không có nguồn no-auth
+// tin cậy; VN30 là chỉ báo chuẩn cho nhóm vốn hóa lớn). FE ghi rõ nhãn "trong VN30".
+const BREADTH_BASKET = VN30
 
 export async function getMarketOverview() {
   const [vniResult, pricesResult] = await Promise.all([
@@ -50,7 +51,7 @@ export async function getMarketOverview() {
     // Batch prices: đếm tăng/giảm/đứng giá trong danh sách mã.
     (async () => {
       try {
-        const codes = WATCH_ALL.join(',')
+        const codes = BREADTH_BASKET.join(',')
         const d = await fetchJson(
           `https://api-finfo.vndirect.com.vn/v4/change_prices/latest?order=code&filter=code:${codes}`,
         )
@@ -63,6 +64,7 @@ export async function getMarketOverview() {
         }
         return {
           source: 'vndirect',
+          basket: 'vn30',
           gainers,
           losers,
           unchanged,

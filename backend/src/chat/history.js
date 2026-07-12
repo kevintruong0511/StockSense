@@ -2,6 +2,22 @@
 // ownership theo userId để user không đụng được phiên của người khác.
 import { query } from '../db.js'
 
+// Mã được phân tích nhiều nhất (toàn hệ thống) trong N ngày qua — cho widget Dashboard.
+// Đếm số phiên chat theo mã; trả [{ code, count }] giảm dần.
+export async function topTickers({ days = 7, limit = 5 } = {}) {
+  const { rows } = await query(
+    `SELECT upper(ticker) AS code, count(*)::int AS count
+       FROM chat_sessions
+      WHERE ticker IS NOT NULL AND ticker <> ''
+        AND created_at > now() - ($1 || ' days')::interval
+      GROUP BY upper(ticker)
+      ORDER BY count DESC, code ASC
+      LIMIT $2`,
+    [String(days), limit],
+  )
+  return rows
+}
+
 // Danh sách phiên của user (mới nhất trước) — dùng cho panel bên trái màn Phân tích AI.
 export async function listSessions(userId) {
   const { rows } = await query(

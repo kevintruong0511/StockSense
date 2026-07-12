@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Clock, LineChart, AlertCircle } from '../components/icons.jsx'
-import { STOCKS, formatVND, upDown, pctStr, chgStr } from '../data/stocks.js'
-import { fetchMarketOverview, fetchMarketNews } from '../data/market.js'
+import { tickerBadge } from '../data/stocks.js'
+import { fetchMarketOverview, fetchMarketNews, fetchTopAnalyzed } from '../data/market.js'
+import PriceBoard from '../components/PriceBoard.jsx'
 
 const UP = '#16A34A'
 const DOWN = '#DC2626'
@@ -9,6 +10,20 @@ const BLUE = '#2563EB'
 
 // Màu theo chiều VN-Index.
 const vniColor = (pct) => (pct >= 0 ? UP : DOWN)
+
+// Lời chào theo giờ Việt Nam.
+function greeting() {
+  const h = Number(
+    new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', hour12: false }).format(new Date()),
+  )
+  if (h < 11) return 'Chào buổi sáng'
+  if (h < 13) return 'Chào buổi trưa'
+  if (h < 18) return 'Chào buổi chiều'
+  return 'Chào buổi tối'
+}
+
+// % thay đổi giá (số thật từ bảng giá) → chuỗi hiển thị + màu.
+const pctFmt = (p) => (p == null ? '—' : (p >= 0 ? '+' : '') + p.toFixed(2).replace('.', ',') + '%')
 
 // Định dạng chỉ số VN-Index.
 const idxFmt = (n) =>
@@ -33,7 +48,7 @@ function buildDashStats(vni, breadth) {
       value: breadth?.gainers != null ? String(breadth.gainers) : '…',
       delta:
         breadth?.gainers != null
-          ? `${breadth.gainers + breadth.losers + breadth.unchanged} mã đang giao dịch`
+          ? `trên ${breadth.gainers + breadth.losers + breadth.unchanged} mã rổ VN30`
           : 'đang cập nhật',
       color: UP,
     },
@@ -55,9 +70,6 @@ function buildDashStats(vni, breadth) {
   ]
 }
 
-const WATCH = ['FPT', 'HPG', 'VNM', 'VCB', 'MWG', 'CMG']
-const TOP = ['FPT', 'VCB', 'HPG', 'MWG', 'VNM']
-
 export default function Dashboard({ newsState: newsStateProp, onRetryNews }) {
   // Dữ liệu thị trường thật.
   const [dashStats, setDashStats] = useState(null)
@@ -66,6 +78,8 @@ export default function Dashboard({ newsState: newsStateProp, onRetryNews }) {
   const [newsData, setNewsData] = useState(null)
   const [newsLoading, setNewsLoading] = useState(true)
   const [newsError, setNewsError] = useState(null)
+  const [topItems, setTopItems] = useState(null) // mã được phân tích nhiều (thật)
+  const [topLoading, setTopLoading] = useState(true)
 
   // Gộp trạng thái news (user-triggered retry vs initial load).
   const effectiveNewsLoading = newsStateProp === 'loading' || (newsLoading && newsData === null)
@@ -99,27 +113,28 @@ export default function Dashboard({ newsState: newsStateProp, onRetryNews }) {
       .finally(() => setNewsLoading(false))
   }, [])
 
-  const topAnalyzed = TOP.map((t, i) => {
-    const s = STOCKS[t]
-    return {
-      rank: i + 1, code: t, short: s.short, logoBg: s.logoBg, logoFg: s.logoFg,
-      count: formatVND(1240 - i * 180), pct: pctStr(s.pct), color: upDown(s.pct),
-    }
-  })
+  // Mã được phân tích nhiều nhất (đếm phiên chat thật) trong 7 ngày qua.
+  useEffect(() => {
+    setTopLoading(true)
+    fetchTopAnalyzed(7, 5)
+      .then((r) => setTopItems(Array.isArray(r.items) ? r.items : []))
+      .catch(() => setTopItems([]))
+      .finally(() => setTopLoading(false))
+  }, [])
 
   return (
     <div>
       {/* heading */}
       <div className="mb-[22px] flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h1 className="m-0 mb-1 text-[26px] font-extrabold tracking-[-0.02em]">Chào buổi sáng 👋</h1>
+          <h1 className="m-0 mb-1 text-[26px] font-extrabold tracking-[-0.02em]">{greeting()} 👋</h1>
           <p className="m-0 text-sm text-slate-500">
             Tổng quan danh mục theo dõi và diễn biến thị trường hôm nay.
           </p>
         </div>
         <div className="flex items-center gap-[7px] text-[12.5px] text-slate-400">
           <Clock size={14} />
-          VN-Index &amp; tin tức cập nhật thật · giá danh mục là số liệu tham khảo
+          VN-Index, bảng giá &amp; tin tức cập nhật thật trong ngày (nguồn VNDIRECT/CafeF)
         </div>
       </div>
 
@@ -151,31 +166,8 @@ export default function Dashboard({ newsState: newsStateProp, onRetryNews }) {
       </div>
 
       <div className="grid gap-5">
-        {/* watchlist */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <h2 className="m-0 text-base font-bold">Danh mục theo dõi</h2>
-            <span className="text-[12.5px] text-slate-400">{WATCH.length} mã</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse">
-              <thead>
-                <tr className="text-right text-[11.5px] uppercase tracking-[0.05em] text-slate-400">
-                  <th className="px-5 py-[11px] text-left font-semibold">Mã</th>
-                  <th className="px-3 py-[11px] font-semibold">Giá</th>
-                  <th className="px-3 py-[11px] font-semibold">+/-</th>
-                  <th className="px-3 py-[11px] font-semibold">%</th>
-                  <th className="px-5 py-[11px] font-semibold">Khối lượng</th>
-                </tr>
-              </thead>
-              <tbody>
-                {WATCH.map((code) => (
-                  <WatchRow key={code} code={code} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* bảng điện — giá thật trong ngày (VNDIRECT), tab Danh mục/VN30, tự làm mới trong giờ giao dịch */}
+        <PriceBoard />
 
         {/* two widgets */}
         <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5">
@@ -236,85 +228,63 @@ export default function Dashboard({ newsState: newsStateProp, onRetryNews }) {
             )}
           </div>
 
-          {/* top analyzed */}
+          {/* top analyzed — đếm phiên phân tích thật, % giá thật */}
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <h2 className="m-0 text-base font-bold">Được phân tích nhiều</h2>
               <span className="inline-flex items-center gap-[5px] text-[11.5px] font-semibold text-blue-600">
                 <LineChart size={13} />
-                24h qua
+                7 ngày qua
               </span>
             </div>
             <div className="px-3 pb-3 pt-1.5">
-              {topAnalyzed.map((t) => (
-                <div
-                  key={t.code}
-                  className="flex w-full items-center gap-3 rounded-[9px] px-2 py-[11px] text-left"
-                >
-                  <span className="tnum w-5 text-center text-[13px] font-extrabold text-slate-300">
-                    {t.rank}
-                  </span>
-                  <div
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold"
-                    style={{ background: t.logoBg, color: t.logoFg }}
-                  >
-                    {t.short}
+              {topLoading && topItems === null ? (
+                [1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center gap-3 px-2 py-[11px]">
+                    <div className="ss-skel h-8 w-8 rounded-lg" />
+                    <div className="ss-skel h-4 w-24" />
+                    <div className="ss-skel ml-auto h-4 w-12" />
                   </div>
-                  <div className="flex-1 leading-tight">
-                    <div className="tnum text-[13.5px] font-bold">{t.code}</div>
-                    <div className="text-[11.5px] text-slate-400">{t.count} lượt phân tích</div>
-                  </div>
-                  <span className="tnum text-[12.5px] font-bold" style={{ color: t.color }}>
-                    {t.pct}
-                  </span>
-                </div>
-              ))}
+                ))
+              ) : !topItems || topItems.length === 0 ? (
+                <p className="m-0 px-3 py-8 text-center text-[13px] text-slate-400">
+                  Chưa có mã nào được phân tích trong 7 ngày qua.
+                </p>
+              ) : (
+                topItems.map((t, i) => {
+                  const b = tickerBadge(t.code)
+                  const color = t.pctChange == null ? '#94A3B8' : t.pctChange >= 0 ? UP : DOWN
+                  return (
+                    <div
+                      key={t.code}
+                      className="flex w-full items-center gap-3 rounded-[9px] px-2 py-[11px] text-left"
+                    >
+                      <span className="tnum w-5 text-center text-[13px] font-extrabold text-slate-300">
+                        {i + 1}
+                      </span>
+                      <div
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold"
+                        style={{ background: b.bg, color: b.fg }}
+                      >
+                        {t.code.slice(0, 3)}
+                      </div>
+                      <div className="min-w-0 flex-1 leading-tight">
+                        <div className="tnum text-[13.5px] font-bold">{t.code}</div>
+                        <div className="text-[11.5px] text-slate-400">
+                          {t.count.toLocaleString('vi-VN')} lượt phân tích
+                        </div>
+                      </div>
+                      <span className="tnum text-[12.5px] font-bold" style={{ color }}>
+                        {pctFmt(t.pctChange)}
+                      </span>
+                    </div>
+                  )
+                })
+              )}
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
-}
-
-// Một dòng danh mục (số liệu tham khảo tĩnh).
-function WatchRow({ code }) {
-  const s = STOCKS[code]
-  const price = s.price
-  const pct = s.pct
-  const chg = s.chg
-  const color = upDown(pct)
-  return (
-    <tr className="border-t border-slate-100 text-right">
-      <td className="px-5 py-[13px] text-left">
-        <div className="flex items-center gap-[11px]">
-          <div
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-xs font-bold"
-            style={{ background: s.logoBg, color: s.logoFg }}
-          >
-            {s.short}
-          </div>
-          <div className="leading-tight">
-            <div className="tnum text-sm font-bold">{code}</div>
-            <div className="max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-[11.5px] text-slate-400">
-              {s.name}
-            </div>
-          </div>
-        </div>
-      </td>
-      <td className="tnum px-3 py-[13px] text-sm font-bold">{formatVND(price)}</td>
-      <td className="tnum px-3 py-[13px] text-[13px] font-semibold" style={{ color }}>
-        {chgStr(chg)}
-      </td>
-      <td className="px-3 py-[13px]">
-        <span
-          className="tnum inline-block rounded-md px-2 py-[3px] text-[12.5px] font-bold"
-          style={{ color, background: pct >= 0 ? '#DCFCE7' : '#FEF2F2' }}
-        >
-          {pctStr(pct)}
-        </span>
-      </td>
-      <td className="tnum px-5 py-[13px] text-[13px] text-slate-500">{s.vol}</td>
-    </tr>
   )
 }

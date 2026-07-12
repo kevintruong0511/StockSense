@@ -18,3 +18,13 @@ async function authedGet(path) {
 
 export const fetchMarketOverview = () => authedGet('/stocks/market/overview')
 export const fetchMarketNews = (size = 10) => authedGet(`/stocks/market/news?size=${size}`)
+
+// Bảng điện: giá thật nhiều mã trong 1 request. Truyền danh sách mã hoặc dùng nhóm VN30.
+export const fetchPriceBoard = (codes) =>
+  authedGet(`/stocks/market/board?codes=${encodeURIComponent((codes || []).join(','))}`)
+export const fetchPriceBoardGroup = (group = 'vn30') =>
+  authedGet(`/stocks/market/board?group=${encodeURIComponent(group)}`)
+
+// Mã được phân tích nhiều nhất (đếm phiên chat thật) trong N ngày qua.
+export const fetchTopAnalyzed = (days = 7, limit = 5) =>
+  authedGet(`/stocks/market/top-analyzed?days=${days}&limit=${limit}`)
