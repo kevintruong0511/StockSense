@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Sparkle, ArrowRight, AlertCircle, Plus, Search } from '../components/icons.jsx'
+import { Sparkle, ArrowRight, AlertCircle, Plus, ImageIcon } from '../components/icons.jsx'
 import Markdown from '../components/Markdown.jsx'
+import { SourceChips, StatusIndicator, hostOf } from '../components/AiSources.jsx'
+import ModelToggle from '../components/ModelToggle.jsx'
 import TickerPicker from '../components/TickerPicker.jsx'
 import { STOCKS } from '../data/stocks.js'
 import { streamAnalyze, fetchTickers } from '../data/ai.js'
@@ -17,125 +19,65 @@ function timeAgo(iso) {
   return new Date(iso).toLocaleDateString('vi-VN')
 }
 
-// Tên miền gọn từ URL để hiển thị trên chip nguồn.
-function hostOf(u) {
-  try {
-    return new URL(u).hostname.replace(/^www\./, '')
-  } catch {
-    return u
+// ── Ảnh đính kèm chat ────────────────────────────────────────────────────────
+// Định dạng ảnh Anthropic/DeepSeek chấp nhận.
+const OK_IMG_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const MAX_IMAGES = 4 // tối đa mỗi tin nhắn
+
+function readAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(r.result)
+    r.onerror = reject
+    r.readAsDataURL(file)
+  })
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = src
+  })
+}
+
+// File ảnh → { dataUrl, media_type, data(base64), name }. Ảnh nhỏ đúng định dạng giữ
+// nguyên (chữ trong ảnh chụp màn hình sắc nét); ảnh lớn thu về ≤1600px cạnh dài + nén
+// để payload gọn. `data` (base64 không header) là phần gửi cho AI; `dataUrl` để preview.
+async function fileToAttachment(file) {
+  if (!file || !file.type?.startsWith('image/')) return null
+  const dataUrl = await readAsDataURL(file)
+  if (OK_IMG_TYPES.includes(file.type) && file.size <= 1.5 * 1024 * 1024) {
+    return { dataUrl, media_type: file.type, data: dataUrl.split(',')[1], name: file.name }
   }
-}
-
-// Dải chip "Nguồn" AI đã tham chiếu (favicon + tên miền), bấm mở tab mới.
-function SourceChips({ items }) {
-  if (!items || items.length === 0) return null
-  return (
-    <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-2">
-      <span className="mr-0.5 text-[11px] font-semibold text-slate-400">Nguồn</span>
-      {items.map((s, i) => (
-        <a
-          key={i}
-          href={s.url}
-          target="_blank"
-          rel="noreferrer"
-          title={s.title || s.url}
-          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600 no-underline transition-colors hover:bg-slate-100 hover:text-slate-900"
-        >
-          <img
-            src={`https://www.google.com/s2/favicons?domain=${hostOf(s.url)}&sz=32`}
-            alt=""
-            width={12}
-            height={12}
-            className="rounded-sm"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none'
-            }}
-          />
-          {hostOf(s.url)}
-        </a>
-      ))}
-    </div>
-  )
-}
-
-// Chỉ báo trạng thái AI theo thời gian thực: suy nghĩ / tìm web (kèm từ khóa) / soạn.
-// Ba chấm nảy + icon nhấp nháy để thấy AI đang làm việc thật, không chỉ "đang phân tích".
-function StatusIndicator({ status }) {
-  const phase = status?.phase || 'thinking'
-  const isSearch = phase === 'searching'
-  const Icon = isSearch ? Search : Sparkle
-  const label =
-    phase === 'writing'
-      ? 'Đang soạn phân tích…'
-      : isSearch
-        ? status?.query
-          ? 'Đang tìm kiếm'
-          : 'Đang tìm kiếm trên web…'
-        : 'Đang suy nghĩ…'
-  return (
-    <div className="flex items-center gap-2 text-slate-500">
-      <Icon size={15} className="shrink-0 animate-pulse text-blue-500" />
-      <span className="text-sm">
-        {label}
-        {isSearch && status?.query && <span className="font-medium text-slate-700"> “{status.query}”</span>}
-      </span>
-      <span className="flex gap-1">
-        {[0, 150, 300].map((d) => (
-          <span
-            key={d}
-            className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-blue-400"
-            style={{ animationDelay: `${d}ms` }}
-          />
-        ))}
-      </span>
-    </div>
-  )
-}
-
-// Nút chọn model AI (Flash / Pro). Free bị khóa ở Flash (nút Pro disabled + 🔒).
-// Dùng ở cả thanh nhập mã và thanh "Hỏi thêm" để luôn thấy/đổi được model.
-function ModelToggle({ model, canPro, disabled, onPick, compact = false }) {
-  const size = compact ? 'px-2 py-1 text-[11.5px]' : 'px-2.5 py-1.5 text-[12.5px]'
-  const label = (m) => (compact ? '' : 'V4 ') + m
-  return (
-    <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
-      <button
-        type="button"
-        onClick={() => onPick('flash')}
-        disabled={disabled}
-        title="DeepSeek V4 Flash — nhanh, tiết kiệm"
-        className={
-          `rounded-md ${size} font-semibold transition-colors disabled:cursor-not-allowed ` +
-          (model === 'flash' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800')
-        }
-      >
-        {label('Flash')}
-      </button>
-      <button
-        type="button"
-        onClick={() => canPro && onPick('pro')}
-        disabled={disabled || !canPro}
-        title={canPro ? 'DeepSeek V4 Pro — phân tích sâu nhất' : 'Chỉ dành cho gói Pro/Ultra — nâng cấp để dùng'}
-        className={
-          `flex items-center gap-1 rounded-md ${size} font-semibold transition-colors ` +
-          (!canPro
-            ? 'cursor-not-allowed text-slate-400'
-            : model === 'pro'
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-800')
-        }
-      >
-        {label('Pro')} {!canPro && <span aria-hidden>🔒</span>}
-      </button>
-    </div>
-  )
+  try {
+    const img = await loadImage(dataUrl)
+    const scale = Math.min(1, 1600 / Math.max(img.width, img.height))
+    const w = Math.max(1, Math.round(img.width * scale))
+    const h = Math.max(1, Math.round(img.height * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+    const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg'
+    const out = canvas.toDataURL(outType, 0.85)
+    return { dataUrl: out, media_type: outType, data: out.split(',')[1], name: file.name }
+  } catch {
+    // Không vẽ được (vd GIF động) → dùng nguyên nếu đúng định dạng.
+    if (OK_IMG_TYPES.includes(file.type)) {
+      return { dataUrl, media_type: file.type, data: dataUrl.split(',')[1], name: file.name }
+    }
+    return null
+  }
 }
 
 // Bong bóng hội thoại. Assistant render markdown + danh sách nguồn; user giữ văn bản thô.
 // `children` (nếu có) dùng cho trạng thái đang stream/placeholder.
-function Bubble({ role, text, sources, children }) {
+function Bubble({ role, text, sources, images, children }) {
   const isUser = role === 'user'
   const body = children != null ? children : isUser ? text : <Markdown text={text || ''} />
+  const imgs = Array.isArray(images) ? images : []
   return (
     <div className={'flex ' + (isUser ? 'justify-end' : 'justify-start')}>
       <div
@@ -146,10 +88,48 @@ function Bubble({ role, text, sources, children }) {
             : 'border border-slate-200 bg-white text-slate-800 shadow-sm')
         }
       >
+        {imgs.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {imgs.map((im, i) => (
+              <img
+                key={i}
+                src={im.dataUrl || `data:${im.media_type};base64,${im.data}`}
+                alt={im.name || 'ảnh đính kèm'}
+                className="max-h-48 max-w-[240px] rounded-lg border border-white/30 object-cover"
+              />
+            ))}
+          </div>
+        )}
         {body}
         {/* DeepSeek không trả citation inline → hiện danh sách "Nguồn" AI đã research ở cuối. */}
         {!isUser && <SourceChips items={sources} />}
       </div>
+    </div>
+  )
+}
+
+// Dải preview ảnh đã đính kèm (dùng chung cho thanh Phân tích + ô hỏi tiếp).
+function AttachedImages({ images, onRemove }) {
+  if (!images.length) return null
+  return (
+    <div className="flex flex-wrap gap-2">
+      {images.map((im, i) => (
+        <div key={i} className="relative">
+          <img
+            src={im.dataUrl}
+            alt={im.name || 'ảnh đính kèm'}
+            className="h-16 w-16 rounded-lg border border-slate-200 object-cover"
+          />
+          <button
+            type="button"
+            onClick={() => onRemove(i)}
+            title="Bỏ ảnh"
+            className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-slate-700 text-xs leading-none text-white shadow transition-colors hover:bg-red-500"
+          >
+            ×
+          </button>
+        </div>
+      ))}
     </div>
   )
 }
@@ -226,6 +206,8 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
   const [error, setError] = useState('')
   const [quotaHit, setQuotaHit] = useState(false) // đã hết lượt hôm nay (HTTP 429)
   const [question, setQuestion] = useState('')
+  const [images, setImages] = useState([]) // ảnh đính kèm cho lượt hỏi sắp gửi
+  const fileInputRef = useRef(null)
   const [universe, setUniverse] = useState([]) // toàn bộ mã niêm yết (gợi ý)
   const [sessions, setSessions] = useState([]) // danh sách phiên chat (panel trái)
   const [activeSessionId, setActiveSessionId] = useState(null) // phiên đang mở (null = phiên mới)
@@ -283,6 +265,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
       setLive('')
       setError('')
       setQuotaHit(false)
+      setImages([])
     } catch {
       setError('Không mở được cuộc trò chuyện.')
     }
@@ -296,6 +279,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
     setLive('')
     setError('')
     setQuotaHit(false)
+    setImages([])
   }
 
   // Xóa 1 phiên; nếu đang mở phiên đó thì về phiên mới trống.
@@ -339,12 +323,39 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
 
   useEffect(() => () => abortRef.current?.(), []) // hủy stream khi rời màn
 
-  function runSend(text, baseChat) {
-    if (streaming || !text.trim()) return
+  // Thêm ảnh vào ô soạn (từ nút chọn, dán, hoặc kéo-thả). Bỏ file không phải ảnh, giới
+  // hạn tổng MAX_IMAGES; ảnh lớn được thu nhỏ/nén trong fileToAttachment.
+  async function addFiles(fileList) {
+    const files = Array.from(fileList || []).filter((f) => f.type?.startsWith('image/'))
+    if (!files.length) return
+    const atts = (await Promise.all(files.map(fileToAttachment))).filter(Boolean)
+    if (atts.length) setImages((cur) => [...cur, ...atts].slice(0, MAX_IMAGES))
+  }
+  const removeImage = (i) => setImages((cur) => cur.filter((_, idx) => idx !== i))
+  const onPasteImages = (e) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+    const files = []
+    for (const it of items) if (it.type?.startsWith('image/')) { const f = it.getAsFile(); if (f) files.push(f) }
+    if (files.length) { e.preventDefault(); addFiles(files) }
+  }
+
+  // Rút gọn tin nhắn cho payload gửi backend: bỏ preview dataUrl/name (chỉ giữ media_type
+  // + data base64 cho ảnh), bỏ sources/hadInline của assistant → nhẹ hơn nhiều.
+  const toWireMsg = (m) => {
+    const base = { role: m.role, content: m.content }
+    if (m.role === 'user' && Array.isArray(m.images) && m.images.length)
+      return { ...base, images: m.images.map((im) => ({ media_type: im.media_type, data: im.data })) }
+    return base
+  }
+
+  function runSend(text, baseChat, imgs = []) {
+    if (streaming || (!text.trim() && imgs.length === 0)) return
     stickBottomRef.current = true // gửi câu mới → bám đáy trở lại để thấy câu hỏi + trả lời
     setError('')
     setQuotaHit(false)
-    const msgs = [...baseChat, { role: 'user', content: text }]
+    const userMsg = { role: 'user', content: text, ...(imgs.length ? { images: imgs } : {}) }
+    const msgs = [...baseChat, userMsg]
     setChat(msgs)
     setLive('')
     liveRef.current = ''
@@ -371,7 +382,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
       ticker: t || undefined,
       stock: STOCKS[t] || undefined,
       userContext: userContext.trim() || undefined,
-      messages: msgs,
+      messages: msgs.map(toWireMsg),
       sessionId: activeSessionId || undefined,
       model, // backend vẫn kẹp lại theo gói — đây chỉ là lựa chọn của user
       onSession: ({ id }) => {
@@ -442,14 +453,22 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
       setError('Hãy nhập mã cổ phiếu trước khi phân tích.')
       return
     }
-    runSend(`Hãy phân tích cổ phiếu ${t} theo khung đã hướng dẫn.`, [])
+    const imgs = images
+    setImages([])
+    let prompt = `Hãy phân tích cổ phiếu ${t} theo khung đã hướng dẫn.`
+    if (imgs.length) prompt += ' Đọc kỹ (các) ảnh tôi đính kèm và kết hợp vào phân tích.'
+    runSend(prompt, [], imgs)
   }
 
   const sendQuestion = () => {
     const q = question.trim()
-    if (!q) return
+    if (!q && images.length === 0) return
+    const imgs = images
+    // Cho phép gửi chỉ ảnh (không kèm chữ) — thêm câu nhắc gọn để AI biết cần đọc ảnh.
+    const text = q || 'Xem và phân tích giúp tôi ảnh tôi vừa gửi.'
     setQuestion('')
-    runSend(q, chat)
+    setImages([])
+    runSend(text, chat, imgs)
   }
 
   if (!aiEnabled) {
@@ -523,6 +542,18 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
 
       {/* cột phải: nội dung phân tích + hội thoại */}
       <div className="flex min-w-0 flex-1 flex-col gap-5">
+      {/* input file ẩn dùng chung cho nút đính kèm ở thanh Phân tích lẫn ô hỏi tiếp */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(e) => {
+          addFiles(e.target.files)
+          e.target.value = '' // reset để chọn lại cùng file vẫn kích hoạt onChange
+        }}
+      />
       {/* header */}
       <div>
         <h1 className="m-0 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900">
@@ -537,7 +568,16 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
       </div>
 
       {/* thanh nhập mã */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div
+        className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          if (e.dataTransfer?.files?.length) {
+            e.preventDefault()
+            addFiles(e.dataTransfer.files)
+          }
+        }}
+      >
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-semibold text-slate-500">
@@ -571,6 +611,17 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
             {showContext ? 'Ẩn dữ liệu bổ sung' : '+ Thêm dữ liệu của bạn'}
           </button>
 
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={streaming || images.length >= MAX_IMAGES}
+            title={images.length >= MAX_IMAGES ? `Tối đa ${MAX_IMAGES} ảnh` : 'Đính kèm ảnh để AI đọc cùng phân tích'}
+            className="flex items-center gap-1.5 rounded-lg px-2 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <ImageIcon size={16} />
+            {images.length ? `Ảnh (${images.length})` : 'Đính kèm ảnh'}
+          </button>
+
           {quotaLabel && (
             <span
               className={
@@ -586,6 +637,15 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
             </span>
           )}
         </div>
+
+        {images.length > 0 && (
+          <div className="mt-3">
+            <AttachedImages images={images} onRemove={removeImage} />
+            <p className="m-0 mt-1.5 text-xs text-slate-400">
+              {images.length} ảnh sẽ được gửi kèm cho AI đọc cùng phân tích mã {ticker.trim().toUpperCase() || '—'}.
+            </p>
+          </div>
+        )}
 
         {showContext && (
           <textarea
@@ -623,7 +683,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
       {hasConversation ? (
         <div className="flex flex-col gap-3">
           {chat.map((m, i) => (
-            <Bubble key={i} role={m.role} text={m.content} sources={m.sources} />
+            <Bubble key={i} role={m.role} text={m.content} sources={m.sources} images={m.images} />
           ))}
           {streaming && (
             <Bubble role="assistant" sources={liveSources}>
@@ -644,31 +704,62 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
           Nhập mã (VD: FPT, HPG, VHM, DGC…) và bấm{' '}
           <span className="font-semibold text-slate-700">Phân tích</span> — AI tự nạp số liệu thời gian
           thực, research web (kèm nguồn bấm được) rồi bóc tách định giá, red flag, rủi ro và{' '}
-          <span className="font-semibold text-slate-700">chốt Mua/Bán/Giữ</span>. Không cần dán dữ liệu tay.
+          <span className="font-semibold text-slate-700">chốt Mua/Bán/Giữ</span>. Muốn AI đọc thêm biểu đồ/tài liệu, bấm{' '}
+          <span className="font-semibold text-slate-700">Đính kèm ảnh</span> hoặc{' '}
+          <span className="font-semibold text-slate-700">Thêm dữ liệu của bạn</span> trước khi phân tích.
         </div>
       )}
 
       {/* ô hỏi tiếp */}
       {hasConversation && (
-        <div className="sticky bottom-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-md">
-          <div className="hidden sm:block">
-            <ModelToggle model={model} canPro={canProModel} disabled={streaming} onPick={pickModel} compact />
+        <div
+          className="sticky bottom-4 rounded-xl border border-slate-200 bg-white p-2 shadow-md"
+          onDragOver={(e) => {
+            e.preventDefault()
+          }}
+          onDrop={(e) => {
+            if (e.dataTransfer?.files?.length) {
+              e.preventDefault()
+              addFiles(e.dataTransfer.files)
+            }
+          }}
+        >
+          {/* ảnh đã đính kèm (preview + bỏ) */}
+          {images.length > 0 && (
+            <div className="mb-2 px-1">
+              <AttachedImages images={images} onRemove={removeImage} />
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:block">
+              <ModelToggle model={model} canPro={canProModel} disabled={streaming} onPick={pickModel} compact />
+            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={streaming || images.length >= MAX_IMAGES}
+              title={images.length >= MAX_IMAGES ? `Tối đa ${MAX_IMAGES} ảnh` : 'Đính kèm ảnh (hoặc dán ảnh vào ô)'}
+              className="flex shrink-0 items-center justify-center rounded-lg border border-slate-200 p-2 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ImageIcon size={18} />
+            </button>
+            <input
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendQuestion()}
+              onPaste={onPasteImages}
+              disabled={streaming}
+              placeholder="Hỏi thêm hoặc dán/đính kèm ảnh… (VD: đọc giúp biểu đồ này)"
+              className="flex-1 bg-transparent px-3 py-2 text-sm text-slate-900 outline-none disabled:opacity-60"
+            />
+            <button
+              onClick={sendQuestion}
+              disabled={streaming || (!question.trim() && images.length === 0)}
+              className="flex items-center gap-1 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Gửi <ArrowRight size={15} />
+            </button>
           </div>
-          <input
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendQuestion()}
-            disabled={streaming}
-            placeholder="Hỏi thêm về mã này… (VD: vì sao biên lợi nhuận giảm?)"
-            className="flex-1 bg-transparent px-3 py-2 text-sm text-slate-900 outline-none disabled:opacity-60"
-          />
-          <button
-            onClick={sendQuestion}
-            disabled={streaming || !question.trim()}
-            className="flex items-center gap-1 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Gửi <ArrowRight size={15} />
-          </button>
         </div>
       )}
 

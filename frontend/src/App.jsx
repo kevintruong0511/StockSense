@@ -5,14 +5,15 @@ import Landing from './screens/Landing.jsx'
 import Auth from './screens/Auth.jsx'
 import Dashboard from './screens/Dashboard.jsx'
 import AiAnalysis from './screens/AiAnalysis.jsx'
+import Portfolio from './screens/Portfolio.jsx'
 import Pricing from './screens/Pricing.jsx'
 import Checkout from './screens/Checkout.jsx'
 import { getToken, setToken, clearToken, fetchMe } from './data/auth.js'
 import { fetchAiStatus } from './data/ai.js'
 import { getBillingStatus } from './data/billing.js'
 
-// Màn cần đăng nhập: Dashboard + Phân tích AI + Thanh toán. Landing công khai.
-const PROTECTED = ['dashboard', 'ai', 'checkout']
+// Màn cần đăng nhập: Dashboard + Phân tích AI + Danh mục + Thanh toán. Landing công khai.
+const PROTECTED = ['dashboard', 'ai', 'portfolio', 'checkout']
 
 export default function App() {
   const [screen, setScreen] = useState('landing')
@@ -40,7 +41,7 @@ export default function App() {
       if (restored) setUser(restored)
 
       const s = new URLSearchParams(window.location.search).get('screen')
-      const valid = ['landing', 'dashboard', 'ai', 'pricing', 'checkout']
+      const valid = ['landing', 'dashboard', 'ai', 'portfolio', 'pricing', 'checkout']
       // Chỉ mở màn cần đăng nhập khi phiên hợp lệ; nếu không sẽ về màn đăng nhập.
       if (s && valid.includes(s) && (restored || !PROTECTED.includes(s))) {
         setScreen(s)
@@ -197,6 +198,8 @@ export default function App() {
               onRefreshBilling={refreshBilling}
               onNavigate={go}
             />
+          ) : screen === 'portfolio' ? (
+            <Portfolio billing={billing} onRefreshBilling={refreshBilling} onNavigate={go} />
           ) : screen === 'checkout' ? (
             <Checkout
               plan={checkout.plan}

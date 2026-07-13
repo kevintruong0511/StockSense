@@ -91,12 +91,27 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS chat_messages_session_idx ON chat_messages (session_id, created_at);
+
+-- Sổ lệnh / danh mục: mỗi dòng = 1 lệnh Mua/Bán ĐÃ KHỚP của user.
+-- Giá vốn TB + lãi/lỗ tính ở tầng app (portfolio/portfolio.js), không lưu tổng hợp.
+CREATE TABLE IF NOT EXISTS trades (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  ticker     TEXT NOT NULL,
+  side       TEXT NOT NULL,                     -- 'buy' | 'sell'
+  quantity   NUMERIC NOT NULL,                  -- số cổ phiếu
+  price      NUMERIC NOT NULL,                  -- giá khớp, VND/cp
+  trade_date DATE NOT NULL,
+  note       TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS trades_user_idx ON trades (user_id, ticker, trade_date);
 `
 
 async function main() {
   try {
     await pool.query(SQL)
-    console.log('[initDb] Đã tạo/kiểm tra schema (users, ai_usage, payment_orders, promo_codes, chat_sessions, chat_messages) thành công.')
+    console.log('[initDb] Đã tạo/kiểm tra schema (users, ai_usage, payment_orders, promo_codes, chat_sessions, chat_messages, trades) thành công.')
   } catch (err) {
     console.error('[initDb] Khởi tạo schema thất bại:', err.message)
     process.exitCode = 1

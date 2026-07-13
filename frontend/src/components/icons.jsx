@@ -66,6 +66,22 @@ export const Upload = (p) => (
   </Icon>
 )
 
+export const Wallet = (p) => (
+  <Icon {...p}>
+    <path d="M19 7V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-2" />
+    <path d="M21 12a2 2 0 0 0-2-2h-3a2 2 0 0 0 0 4h3a2 2 0 0 0 2-2z" />
+    <path d="M4 7h13" />
+  </Icon>
+)
+
+export const ImageIcon = (p) => (
+  <Icon {...p}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <path d="m21 15-5-5L5 21" />
+  </Icon>
+)
+
 export const HistoryIcon = (p) => (
   <Icon {...p}>
     <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
@@ -149,6 +165,15 @@ export const Check = (p) => (
 export const Plus = (p) => (
   <Icon strokeWidth={2.2} {...p}>
     <path d="M12 5v14M5 12h14" />
+  </Icon>
+)
+
+export const Trash = (p) => (
+  <Icon {...p}>
+    <path d="M3 6h18" />
+    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6M14 11v6" />
   </Icon>
 )
 

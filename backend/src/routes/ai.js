@@ -6,7 +6,8 @@ import { dailyLimit, effectivePlan, resolveModelTier } from '../billing/plans.js
 import { consume, getUsage } from '../billing/usage.js'
 import { getMarketNews, getMarketOverview } from '../market/marketOverview.js'
 import { getStockSnapshot, getTickerUniverse } from '../market/stockData.js'
-import { BASE_SYSTEM, buildContext, streamMessages } from '../ai/analyst.js'
+import { BASE_SYSTEM, buildContext } from '../ai/analyst.js'
+import { runAnalysisStream } from '../ai/analysisStream.js'
 import {
   addMessage,
   createSession,
@@ -17,28 +18,6 @@ import {
   renameSession,
   touchSession,
 } from '../chat/history.js'
-
-// Tên miền gọn (bỏ www.) — dùng để dựng marker chip nguồn ⟦host|url⟧ khớp hệt client.
-function hostOf(u) {
-  try {
-    return new URL(u).hostname.replace(/^www\./, '')
-  } catch {
-    return u
-  }
-}
-
-// Đổi lỗi DeepSeek (SDK Anthropic-compatible) thành thông báo tiếng Việt dễ hiểu.
-function friendlyAiError(err) {
-  const msg = String(err?.error?.error?.message || err?.message || '')
-  const status = err?.status
-  if (status === 402 || /insufficient balance|insufficient_balance|balance/i.test(msg))
-    return 'Tài khoản DeepSeek đã hết số dư. Vào platform.deepseek.com → Top up để nạp thêm.'
-  if (status === 401 || /authentication|invalid x-api-key|invalid api key|authorization/i.test(msg))
-    return 'Khóa DEEPSEEK_API_KEY không hợp lệ hoặc đã bị thu hồi.'
-  if (status === 429 || /rate limit/i.test(msg))
-    return 'DeepSeek đang giới hạn tần suất. Thử lại sau giây lát.'
-  return 'Không gọi được AI: ' + (msg || 'lỗi không xác định')
-}
 
 const router = Router()
 router.use(requireAuth)
@@ -123,11 +102,35 @@ router.post('/analyze', async (req, res) => {
 
   const { ticker, stock, userContext, messages, sessionId } = req.body || {}
 
+  // Ảnh đính kèm (chỉ tin user): media_type nằm trong whitelist Anthropic + data base64
+  // trong hạn mức. Lọc bỏ ảnh sai định dạng/quá lớn; tối đa 4 ảnh/tin để chặn payload.
+  const OK_IMG_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+  const MAX_IMG_B64 = 7 * 1024 * 1024 // ~5MB nhị phân sau giải mã base64
+  const sanitizeImages = (arr) =>
+    (Array.isArray(arr) ? arr : [])
+      .filter(
+        (im) =>
+          im &&
+          OK_IMG_TYPES.has(im.media_type) &&
+          typeof im.data === 'string' &&
+          im.data.length > 0 &&
+          im.data.length <= MAX_IMG_B64,
+      )
+      .slice(0, 4)
+      .map((im) => ({ media_type: im.media_type, data: im.data }))
+
   // Chỉ nhận message hợp lệ user/assistant, cắt bớt để tránh prompt quá dài.
   const safeMessages = Array.isArray(messages)
     ? messages
         .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-        .map((m) => ({ role: m.role, content: m.content.slice(0, 8000) }))
+        .map((m) => {
+          const out = { role: m.role, content: m.content.slice(0, 8000) }
+          if (m.role === 'user') {
+            const imgs = sanitizeImages(m.images)
+            if (imgs.length) out.images = imgs
+          }
+          return out
+        })
     : []
 
   if (safeMessages.length === 0 || safeMessages[safeMessages.length - 1].role !== 'user') {
@@ -195,103 +198,24 @@ router.post('/analyze', async (req, res) => {
     '\n\n' +
     buildContext({ ticker, stock, userContext, news, overview, snapshotText: snapshot?.text })
 
-  // Mở SSE.
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-cache, no-transform',
-    Connection: 'keep-alive',
-    'X-Accel-Buffering': 'no',
-  })
-  const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`)
-
-  // Báo client biết phiên nào đang ghi (nhất là phiên mới vừa tạo) để nó gắn activeSessionId.
-  send({ type: 'session', id: session.id, title: session.title })
-
-  // Tích lũy lượt assistant để lưu DB. Chèn marker ⟦host|url⟧ đúng như client (chống trùng URL
-  // liền nhau) để khi tải lại phiên cũ chip nguồn inline vẫn khớp và bấm được.
-  let assistantBuf = ''
-  let lastCite = null
-  const collectedSources = []
-  let saved = false
-  const persistAssistant = async () => {
-    if (saved) return
-    saved = true
-    if (!assistantBuf) return
-    try {
+  // Stream ra SSE (lõi dùng chung). preludeEvents báo phiên đang ghi để client gắn
+  // activeSessionId; onAssistantDone lưu lượt assistant (kèm marker nguồn) + đẩy phiên lên đầu.
+  await runAnalysisStream({
+    req,
+    res,
+    system,
+    messages: safeMessages,
+    modelId,
+    preludeEvents: [{ type: 'session', id: session.id, title: session.title }],
+    onAssistantDone: async ({ content, sources }) => {
       await addMessage(session.id, {
         role: 'assistant',
-        content: assistantBuf,
-        sources: collectedSources.length ? collectedSources : undefined,
+        content,
+        sources: sources.length ? sources : undefined,
       })
       await touchSession(session.id, { ticker: ticker ? String(ticker).toUpperCase() : undefined })
-    } catch (err) {
-      console.error('[ai:session:persist]', err)
-    }
-  }
-
-  const ac = new AbortController()
-  req.on('close', () => {
-    ac.abort()
-    // Client ngắt giữa chừng → vẫn lưu phần assistant đã sinh để không mất.
-    persistAssistant()
+    },
   })
-
-  try {
-    await streamMessages({
-      system,
-      messages: safeMessages,
-      model: modelId,
-      signal: ac.signal,
-      onText: (text) => {
-        if (text) {
-          assistantBuf += text
-          lastCite = null // có text mới → cho phép trích lại cùng nguồn cho luận điểm sau
-          send({ type: 'token', text })
-        }
-      },
-      onCitation: (c) => {
-        // Giữ để tương thích: nếu endpoint có trả citation → chip inline ngay sau câu.
-        // DeepSeek bỏ qua citations nên nhánh này thường không chạy.
-        if (c?.url) {
-          if (c.url !== lastCite) {
-            lastCite = c.url
-            assistantBuf += `⟦${hostOf(c.url)}|${c.url}⟧`
-            if (!collectedSources.some((s) => s.url === c.url))
-              collectedSources.push({ url: c.url, title: c.title || c.url })
-          }
-          send({ type: 'citation', url: c.url, title: c.title || '', cited_text: c.cited_text || '' })
-        }
-      },
-      onSource: (s) => {
-        // Nguồn AI research qua web_search (DeepSeek) → gom thành danh sách "Nguồn tham khảo".
-        if (s?.url && !collectedSources.some((x) => x.url === s.url)) {
-          collectedSources.push({ url: s.url, title: s.title || s.url })
-          send({ type: 'sources', items: [{ url: s.url, title: s.title || s.url }] })
-        }
-      },
-      onStatus: (st) => {
-        // Trạng thái thực của AI: thinking (suy nghĩ) / searching (tìm web, kèm query) / writing (soạn).
-        if (st?.phase) send({ type: 'status', phase: st.phase, query: st.query || '' })
-      },
-      onReset: () => {
-        // Pha 1 (research) rò rỉ/cụt → bỏ text đã stream, chuẩn bị nhận bản viết lại (pha 2).
-        // GIỮ nguồn đã gom (nguồn research vẫn đúng cho bản phân tích).
-        assistantBuf = ''
-        lastCite = null
-        send({ type: 'reset' })
-      },
-    })
-    await persistAssistant()
-    send({ type: 'done' })
-  } catch (err) {
-    if (!ac.signal.aborted) {
-      console.error('[ai]', err)
-      await persistAssistant()
-      send({ type: 'error', error: friendlyAiError(err) })
-    }
-  } finally {
-    res.end()
-  }
 })
 
 export default router

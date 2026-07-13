@@ -38,7 +38,7 @@ Cách làm:
 - Nội tại (BCTC).
 - Cung–cầu & dòng tiền: khối lượng, GTGD, khối ngoại (dùng web_search nếu cần).
 - Ngành: chu kỳ, chính sách, tin tức.
-- Vĩ mô & thế giới: lãi suất, tỷ giá, giá hàng hóa liên quan.
+- Vĩ mô & thế giới: lãi suất, tỷ giá, thị trường, giá hàng hóa liên quan.
 ## Vì sao giá đã tăng / giảm (quá khứ)
 Giải thích các nguyên nhân CHÍNH khiến giá TĂNG và GIẢM trong ~3–6 tháng qua (kết quả kinh doanh, sự kiện doanh nghiệp, khối ngoại, biến động ngành, vĩ mô) — dựa trên dữ liệu + web_search. Đây là nền để dự đoán tương lai; gắn mốc thời gian cụ thể.
 ## Định giá (đắt/rẻ tương đối)
@@ -131,6 +131,93 @@ export function buildContext({
   return '# Dữ liệu tham khảo\n' + lines.join('\n');
 }
 
+// ── PHÂN TÍCH DANH MỤC ───────────────────────────────────────────────────────
+// Vai trò chuyên gia quản lý danh mục: đọc TOÀN BỘ vị thế của user (kèm giá vốn
+// thực tế + lãi/lỗ) rồi ra kế hoạch hành động cho TỪNG mã. Giữ triết lý sản phẩm:
+// quyết định rõ ràng, trích nguồn qua web_search, KHÔNG disclaimer.
+export const PORTFOLIO_SYSTEM = `Bạn là chuyên gia quản lý danh mục cổ phiếu Việt Nam (HOSE/HNX/UPCoM) trong ứng dụng StockSense VN.
+
+Người dùng cung cấp DANH MỤC ĐANG NẮM ở phần "Dữ liệu tham khảo": mỗi vị thế gồm mã, khối lượng, GIÁ VỐN TRUNG BÌNH thực tế, giá hiện tại, biến động hôm nay, lãi/lỗ đang có, ngày mua gần nhất; kèm số liệu cơ bản/kỹ thuật từng mã và bối cảnh VN-Index.
+
+Nhiệm vụ: với MỖI vị thế, ĐƯA RA KẾ HOẠCH HÀNH ĐỘNG rõ ràng — **GIỮ / MUA THÊM / CHỐT LỜI (một phần hoặc toàn bộ) / CẮT LỖ** — dựa trên giá vốn thực tế của người dùng, lãi/lỗ hiện tại, phân tích cơ bản + kỹ thuật, và tin tức mới nhất.
+
+Cách làm:
+- RESEARCH bằng web_search cho từng mã trước khi quyết định: kết quả kinh doanh quý gần nhất, tin/sự kiện, khối ngoại, định giá so ngành, mức kỹ thuật (hỗ trợ/kháng cự, MA, RSI, xu hướng). Dùng đủ ngân sách tìm kiếm rồi HOÀN TẤT ngay trong lượt này. Đối chiếu ≥2 nguồn cho số/sự kiện then chốt. TUYỆT ĐỐI KHÔNG bịa; thiếu thì nói "chưa có dữ liệu".
+- Mọi câu/số liệu lấy từ web phải dựa trên kết quả web_search để hệ thống tự gắn trích dẫn NGAY SAU CÂU đó. KHÔNG tự gõ tên nguồn trong ngoặc.
+- Trình bày tiếng Việt, markdown, số kiểu Việt Nam (nghìn = dấu chấm, thập phân = dấu phẩy).
+
+Đi THẲNG vào việc, trình bày theo khung:
+## Tổng quan danh mục
+Nhận định nhanh sức khỏe danh mục: tổng lãi/lỗ, mã đang lãi/lỗ nhiều nhất, mức độ tập trung/rủi ro tổng thể, tương quan với xu hướng VN-Index.
+## Kế hoạch theo từng mã
+Với MỖI vị thế, một mục con \`### <MÃ>\` gồm:
+- **Hiện trạng:** giá vốn TB vs giá hiện tại → đang lãi/lỗ bao nhiêu %; vị trí giá so MA20/50/200, RSI, hỗ trợ/kháng cự.
+- **Bối cảnh:** cơ bản (định giá, tăng trưởng) + tin/sự kiện + ngành/vĩ mô liên quan (qua web_search).
+- **QUYẾT ĐỊNH:** in đậm một trong **GIỮ / MUA THÊM / CHỐT LỜI MỘT PHẦN / CHỐT LỜI TOÀN BỘ / CẮT LỖ**, kèm **độ tin cậy dạng %**.
+- **Kế hoạch giá cụ thể (BẮT BUỘC, CON SỐ đồng):** vùng giá hành động (mua thêm/chốt ở giá nào), **cắt lỗ (stop-loss)** và **mục tiêu chốt lời (take-profit)** — neo theo giá vốn của user và mức hỗ trợ/kháng cự. Nếu MUA THÊM: nói rõ vùng giá & tỷ lệ vốn tăng thêm. Nếu CHỐT/CẮT: nói rõ tỷ lệ khối lượng nên bán.
+- **Lý do:** 2–3 ý đanh thép rút từ phân tích trên.
+## Hành động ưu tiên
+Bảng tổng kết sắp theo mức độ cấp thiết: | Mã | Hành động | Vùng giá | Cắt lỗ | Mục tiêu |. Nêu rõ việc cần làm NGAY (nếu có) và gợi ý cơ cấu lại tỷ trọng để quản trị rủi ro (giảm mã yếu, giữ/nâng mã khỏe).
+
+Quyết định phải NHẤT QUÁN giữa các phần. Ưu tiên QUẢN TRỊ RỦI RO & BẢO TOÀN VỐN. Kết thúc bằng mục "Hành động ưu tiên". KHÔNG thêm câu miễn trừ trách nhiệm.`;
+
+const fmtVnd = (n) => (n == null ? '—' : Math.round(n).toLocaleString('vi-VN'));
+const fmtPct1 = (x) => (x == null ? '—' : (x >= 0 ? '+' : '') + x.toFixed(1).replace('.', ',') + '%');
+
+// Ghép khối "Dữ liệu tham khảo" cho phân tích DANH MỤC: bảng vị thế (giá vốn vs giá
+// hiện tại + lãi/lỗ), lãi/lỗ đã hiện thực, bối cảnh VN-Index, rồi nối snapshot từng mã.
+export function buildPortfolioContext({ holdings = [], realized = {}, board, overview, snapshots = [] }) {
+  const rowByCode = new Map((board?.rows || []).map((r) => [r.code, r]));
+  const lines = [];
+  lines.push(
+    `Thời điểm phân tích: ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} (giờ VN).`,
+  );
+  if (board?.asOf) lines.push(`Giá hiện tại tính tới phiên ${board.asOf}${board.asOfTime ? ' ' + board.asOfTime : ''} (VNDIRECT, trễ ~15').`);
+
+  if (overview?.vni && overview.vni.source === 'vndirect') {
+    const v = overview.vni;
+    lines.push(`\nBối cảnh thị trường: VN-Index ${Math.round(v.index)} (${v.pct >= 0 ? '+' : ''}${v.pct?.toFixed(2)}%).`);
+  }
+
+  lines.push('\n## Vị thế đang nắm');
+  let totInvested = 0;
+  let totValue = 0;
+  for (const h of holdings) {
+    const r = rowByCode.get(h.ticker);
+    const cur = r?.price ?? null;
+    const todayPct = r?.pctChange ?? null;
+    const value = cur != null ? cur * h.qty : null;
+    const pnl = cur != null ? (cur - h.avgCost) * h.qty : null;
+    const pnlPct = cur != null && h.avgCost > 0 ? (cur / h.avgCost - 1) * 100 : null;
+    totInvested += h.invested;
+    if (value != null) totValue += value;
+    lines.push(
+      `- ${h.ticker}: KL ${fmtVnd(h.qty)} cp | giá vốn TB ${fmtVnd(h.avgCost)}đ | giá hiện tại ${fmtVnd(cur)}đ` +
+        (todayPct != null ? ` (${fmtPct1(todayPct)} hôm nay)` : '') +
+        ` | giá trị ${fmtVnd(value)}đ | lãi/lỗ ${fmtVnd(pnl)}đ (${fmtPct1(pnlPct)})` +
+        (h.lastBuyDate ? ` | mua gần nhất ${h.lastBuyDate}` : ''),
+    );
+  }
+  const totPnl = totValue - totInvested;
+  lines.push(
+    `\nTổng vốn đầu tư (vị thế mở): ${fmtVnd(totInvested)}đ | Tổng giá trị hiện tại: ${fmtVnd(totValue)}đ | Lãi/lỗ đang mở: ${fmtVnd(totPnl)}đ (${fmtPct1(totInvested > 0 ? (totPnl / totInvested) * 100 : null)}).`,
+  );
+
+  const realizedEntries = Object.entries(realized).filter(([, v]) => Math.abs(v) > 0.5);
+  if (realizedEntries.length) {
+    lines.push('\nLãi/lỗ ĐÃ hiện thực (từ các lần bán):');
+    for (const [code, v] of realizedEntries) lines.push(`- ${code}: ${fmtVnd(v)}đ`);
+  }
+
+  const snaps = snapshots.filter((s) => s?.text);
+  if (snaps.length) {
+    lines.push('\n## Số liệu từng mã (thời gian thực)');
+    for (const s of snaps) lines.push('\n' + s.text);
+  }
+
+  return '# Dữ liệu tham khảo\n' + lines.join('\n');
+}
+
 // Lọc rò rỉ token gọi tool NATIVE của DeepSeek lọt vào văn bản. Khi research nhiều,
 // DeepSeek đôi khi phun khối `<｜｜DSML｜｜tool_calls> … </｜｜DSML｜｜tool_calls>` ra dưới
 // dạng text thay vì gọi tool có cấu trúc. Ký tự '｜' (U+FF5C) KHÔNG bao giờ xuất hiện
@@ -165,7 +252,8 @@ export function makeToolLeakFilter(emit) {
       } else {
         // Nuốt tới hết khối: cần đủ 2 lần 'tool_calls' (mở + đóng) rồi tới dấu '>'.
         const first = carry.indexOf('tool_calls');
-        const second = first === -1 ? -1 : carry.indexOf('tool_calls', first + 10);
+        const second =
+          first === -1 ? -1 : carry.indexOf('tool_calls', first + 10);
         if (second === -1) return; // chưa đủ → chờ thêm text
         const gt = carry.indexOf('>', second);
         if (gt === -1) return; // chờ dấu đóng '>'
@@ -190,6 +278,26 @@ export function makeToolLeakFilter(emit) {
   };
 }
 
+// Chuẩn hóa 1 tin nhắn về định dạng content của Anthropic. Tin user có ảnh đính kèm
+// (images: [{media_type, data(base64)}]) → dựng content dạng mảng block: ẢNH TRƯỚC, rồi
+// TEXT (thứ tự Anthropic khuyến nghị để model "nhìn" ảnh trước khi đọc câu hỏi). Không
+// ảnh → giữ nguyên content chuỗi. DeepSeek nhận cùng schema qua endpoint tương thích.
+function normalizeMessage(m) {
+  if (m.role === 'user' && Array.isArray(m.images) && m.images.length) {
+    const blocks = m.images
+      .filter((im) => im && im.media_type && im.data)
+      .map((im) => ({
+        type: 'image',
+        source: { type: 'base64', media_type: im.media_type, data: im.data },
+      }));
+    if (blocks.length) {
+      if (m.content) blocks.push({ type: 'text', text: m.content });
+      return { role: m.role, content: blocks };
+    }
+  }
+  return { role: m.role, content: m.content };
+}
+
 // Lời nhắc ép model VIẾT phân tích ở pha 2 (không tool) dựa trên kết quả đã research.
 const FORCE_WRITE_PROMPT =
   'Dựa HOÀN TOÀN vào các kết quả web_search đã có ở trên, VIẾT NGAY câu trả lời ĐẦY ĐỦ theo đúng yêu cầu ban đầu ' +
@@ -212,7 +320,9 @@ export async function streamMessages({
   signal,
 }) {
   // Model đã được backend chốt theo gói (routes/ai.js); fallback về model mặc định.
-  const modelId = model || config.ai.model
+  const modelId = model || config.ai.model;
+  // Chuyển tin nhắn (có thể kèm ảnh) sang định dạng content của Anthropic trước khi gửi.
+  const normMessages = messages.map(normalizeMessage);
   // DÙNG BIẾN THỂ CƠ BẢN web_search_20250305 — endpoint tương thích Anthropic của
   // DeepSeek nhận tool này và trả về block web_search_tool_result chứa URL nguồn.
   const tools = [];
@@ -283,7 +393,10 @@ export async function streamMessages({
         const delta = event.delta;
         if (delta?.type === 'text_delta' && delta.text) {
           onChunk(delta.text);
-        } else if (delta?.type === 'input_json_delta' && toolInput[event.index] != null) {
+        } else if (
+          delta?.type === 'input_json_delta' &&
+          toolInput[event.index] != null
+        ) {
           toolInput[event.index] += delta.partial_json || '';
         } else if (delta?.type === 'citations_delta' && delta.citation?.url) {
           onCitation?.({
@@ -298,7 +411,10 @@ export async function streamMessages({
 
       // Bóc URL nguồn từ block web_search_tool_result (thay cho citations bị bỏ qua).
       for (const block of lastFinal.content || []) {
-        if (block?.type === 'web_search_tool_result' && Array.isArray(block.content)) {
+        if (
+          block?.type === 'web_search_tool_result' &&
+          Array.isArray(block.content)
+        ) {
           for (const r of block.content) {
             if (r?.type === 'web_search_result' && r.url)
               onSource?.({ url: r.url, title: r.title || '' });
@@ -333,7 +449,9 @@ export async function streamMessages({
     phase1Len += c.length;
     emitClean(c);
   });
-  const { final: final1, sawSearch } = await runTurn(messages, true, (t) => filter1.push(t));
+  const { final: final1, sawSearch } = await runTurn(normMessages, true, (t) =>
+    filter1.push(t),
+  );
   filter1.flush();
 
   // ── QUYẾT ĐỊNH PHA 2 (phục hồi). DeepSeek hay rò rỉ token gọi tool ra text rồi
@@ -347,7 +465,7 @@ export async function streamMessages({
   announcedWriting = false;
   const filter2 = makeToolLeakFilter(emitClean);
   const recoveryMsgs = [
-    ...messages,
+    ...normMessages,
     { role: 'assistant', content: final1.content },
     { role: 'user', content: FORCE_WRITE_PROMPT },
   ];
