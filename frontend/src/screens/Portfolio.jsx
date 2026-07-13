@@ -13,7 +13,12 @@ import {
   streamPortfolioAnalyze,
 } from '../data/portfolio.js'
 import { fetchTickers } from '../data/ai.js'
+import { useAiRun, patchRun, getRun } from '../data/aiRunStore.js'
 import { upDown } from '../data/stocks.js'
+
+// Store bền cho luồng phân tích danh mục — sống qua chuyển màn (AI chạy tiếp ở nền).
+const AI_KEY = 'portfolio'
+const AI_INITIAL = { analyzing: false, text: '', sources: [], status: null, error: '', quotaHit: false, done: false }
 
 // Định dạng số kiểu Việt (nghìn = dấu chấm, thập phân = dấu phẩy).
 const vnd = (n) => (n == null ? '—' : Math.round(n).toLocaleString('vi-VN'))
@@ -83,17 +88,17 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
   const [model, setModel] = useState('flash')
   const userPickedModel = useRef(false)
 
-  // AI phân tích danh mục.
-  const [analyzing, setAnalyzing] = useState(false)
-  const [planText, setPlanText] = useState('')
-  const [planSources, setPlanSources] = useState([])
-  const [planStatus, setPlanStatus] = useState(null)
-  const [planError, setPlanError] = useState('')
-  const [planDone, setPlanDone] = useState(false)
-  const [quotaHit, setQuotaHit] = useState(false)
-  const planRef = useRef('')
-  const sourcesRef = useRef([])
-  const abortRef = useRef(null)
+  // AI phân tích danh mục — state giữ trong store bền để không mất khi chuyển màn.
+  const [aiRun] = useAiRun(AI_KEY, AI_INITIAL)
+  const {
+    analyzing,
+    text: planText,
+    sources: planSources,
+    status: planStatus,
+    error: planError,
+    quotaHit,
+    done: planDone,
+  } = aiRun
 
   useEffect(() => {
     fetchTickers().then((l) => Array.isArray(l) && setUniverse(l)).catch(() => {})
@@ -134,7 +139,7 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
     }
   }, [])
 
-  useEffect(() => () => abortRef.current?.(), []) // hủy stream khi rời màn
+  // KHÔNG hủy stream khi unmount — để AI chạy tiếp ở nền; state giữ trong store.
 
   const setField = (k, v) => setForm((f) => ({ ...f, [k]: v }))
   const resetForm = () => {
@@ -220,54 +225,36 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
   }
 
   function runAnalyze() {
-    if (analyzing) return
+    if (getRun(AI_KEY)?.analyzing) return
     if (!holdings.length) {
-      setPlanError('Chưa có vị thế nào để phân tích. Hãy thêm lệnh mua trước.')
+      patchRun(AI_KEY, { error: 'Chưa có vị thế nào để phân tích. Hãy thêm lệnh mua trước.' })
       return
     }
-    setPlanError('')
-    setQuotaHit(false)
-    setPlanDone(false)
-    planRef.current = ''
-    setPlanText('')
-    sourcesRef.current = []
-    setPlanSources([])
-    setPlanStatus({ phase: 'thinking' })
-    setAnalyzing(true)
-    abortRef.current = streamPortfolioAnalyze({
+    patchRun(AI_KEY, { analyzing: true, text: '', sources: [], status: { phase: 'thinking' }, error: '', quotaHit: false, done: false, abort: null })
+    const abort = streamPortfolioAnalyze({
       model,
-      onToken: (t) => {
-        planRef.current += t
-        setPlanText(planRef.current)
-      },
-      onSources: (items) => {
-        const merged = [...sourcesRef.current]
-        for (const it of items)
-          if (it?.url && !merged.some((s) => s.url === it.url)) merged.push({ url: it.url, title: it.title || it.url })
-        sourcesRef.current = merged
-        setPlanSources(merged)
-      },
-      onStatus: (st) => {
-        if (st?.phase) setPlanStatus(st)
-      },
-      onReset: () => {
-        planRef.current = ''
-        setPlanText('')
-      },
+      onToken: (t) => patchRun(AI_KEY, (s) => ({ ...s, text: s.text + t })),
+      onSources: (items) =>
+        patchRun(AI_KEY, (s) => {
+          const merged = [...s.sources]
+          for (const it of items)
+            if (it?.url && !merged.some((x) => x.url === it.url)) merged.push({ url: it.url, title: it.title || it.url })
+          return { ...s, sources: merged }
+        }),
+      onStatus: (st) => st?.phase && patchRun(AI_KEY, { status: st }),
+      onReset: () => patchRun(AI_KEY, { text: '' }),
       onDone: () => {
-        setAnalyzing(false)
-        setPlanStatus(null)
-        setPlanDone(true)
+        patchRun(AI_KEY, { analyzing: false, status: null, done: true })
         onRefreshBilling?.()
       },
       onError: (msg, meta) => {
-        setAnalyzing(false)
-        setPlanStatus(null)
-        if (meta?.code === 'quota_exceeded' || meta?.status === 429) setQuotaHit(true)
-        else setPlanError(msg)
+        if (meta?.code === 'quota_exceeded' || meta?.status === 429)
+          patchRun(AI_KEY, { analyzing: false, status: null, quotaHit: true })
+        else patchRun(AI_KEY, { analyzing: false, status: null, error: msg })
         onRefreshBilling?.()
       },
     })
+    patchRun(AI_KEY, { abort })
   }
 
   // Tổng danh mục (lãi/lỗ chỉ tính trên vị thế có giá hiện tại).

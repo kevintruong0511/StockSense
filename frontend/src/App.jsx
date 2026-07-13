@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Sidebar from './components/Sidebar.jsx'
 import TopBar from './components/TopBar.jsx'
 import Landing from './screens/Landing.jsx'
@@ -6,53 +6,87 @@ import Auth from './screens/Auth.jsx'
 import Dashboard from './screens/Dashboard.jsx'
 import AiAnalysis from './screens/AiAnalysis.jsx'
 import Portfolio from './screens/Portfolio.jsx'
+import Community from './screens/Community.jsx'
 import Pricing from './screens/Pricing.jsx'
 import Checkout from './screens/Checkout.jsx'
 import { getToken, setToken, clearToken, fetchMe } from './data/auth.js'
 import { fetchAiStatus } from './data/ai.js'
 import { getBillingStatus } from './data/billing.js'
+import { resetAllRuns } from './data/aiRunStore.js'
 
-// Màn cần đăng nhập: Dashboard + Phân tích AI + Danh mục + Thanh toán. Landing công khai.
-const PROTECTED = ['dashboard', 'ai', 'portfolio', 'checkout']
+// Màn cần đăng nhập: Dashboard + Phân tích cổ phiếu + Danh mục + Cộng Đồng + Thanh toán. Landing công khai.
+const PROTECTED = ['dashboard', 'ai', 'portfolio', 'community', 'checkout']
+
+const VALID_SCREENS = ['landing', 'dashboard', 'ai', 'portfolio', 'community', 'pricing', 'checkout']
+// Nhớ màn hình cuối để mở lại tab không văng về landing. KHÔNG nhớ các màn tạm
+// (auth: đang đăng nhập; checkout: đang thanh toán dở) — mở lại nên về app chính.
+const SCREEN_KEY = 'stocksense.screen'
+const REMEMBERED_SCREENS = ['dashboard', 'ai', 'portfolio', 'community', 'pricing']
 
 export default function App() {
   const [screen, setScreen] = useState('landing')
   const [user, setUser] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
+  const [bootError, setBootError] = useState(false)
   const [newsState, setNewsState] = useState('ready')
   const [aiEnabled, setAiEnabled] = useState(false)
   const [billing, setBilling] = useState(null) // { plan, planExpiresAt, usage:{...} }
   const [checkout, setCheckout] = useState({ plan: 'pro', cycle: 'monthly' })
 
   // Khôi phục phiên từ token đã lưu, rồi áp deep-link: ?screen=dashboard
-  useEffect(() => {
-    let cancelled = false
-    async function boot() {
-      let restored = null
-      if (getToken()) {
-        try {
-          const { user: u } = await fetchMe()
-          restored = u
-        } catch {
-          clearToken() // token hỏng/hết hạn
+  // requestId chặn race khi boot() được gọi lại (nút "Thử lại") trong lúc lần gọi trước chưa xong.
+  const bootRequestRef = useRef(0)
+  const boot = useCallback(async () => {
+    const requestId = ++bootRequestRef.current
+    setBootError(false)
+    let restored = null
+    if (getToken()) {
+      try {
+        const { user: u } = await fetchMe()
+        restored = u
+      } catch (err) {
+        if (bootRequestRef.current !== requestId) return
+        if (err.status === 401) {
+          clearToken() // token thật sự sai/hết hạn — chỉ xoá trong trường hợp này
+        } else {
+          // Lỗi tạm thời (mất mạng, backend cold start, lỗi máy chủ...) — GIỮ token,
+          // không đá người dùng ra ngoài; hiện màn "thử lại" thay vì Auth.
+          setBootError(true)
+          return
         }
       }
-      if (cancelled) return
-      if (restored) setUser(restored)
+    }
+    if (bootRequestRef.current !== requestId) return
+    if (restored) setUser(restored)
 
-      const s = new URLSearchParams(window.location.search).get('screen')
-      const valid = ['landing', 'dashboard', 'ai', 'portfolio', 'pricing', 'checkout']
-      // Chỉ mở màn cần đăng nhập khi phiên hợp lệ; nếu không sẽ về màn đăng nhập.
-      if (s && valid.includes(s) && (restored || !PROTECTED.includes(s))) {
-        setScreen(s)
-      }
-      setAuthChecked(true)
+    // Ưu tiên deep-link ?screen=…, sau đó là màn đã nhớ trong localStorage.
+    const fromUrl = new URLSearchParams(window.location.search).get('screen')
+    const saved = localStorage.getItem(SCREEN_KEY)
+    const candidate =
+      fromUrl && VALID_SCREENS.includes(fromUrl)
+        ? fromUrl
+        : saved && VALID_SCREENS.includes(saved)
+          ? saved
+          : null
+
+    if (candidate && (restored || !PROTECTED.includes(candidate))) {
+      setScreen(candidate)
+    } else if (restored) {
+      // Có phiên hợp lệ nhưng không rõ màn đích → vào thẳng app thay vì landing.
+      setScreen('dashboard')
     }
-    boot()
-    return () => {
-      cancelled = true
-    }
+    setAuthChecked(true)
   }, [])
+
+  // Nhớ màn hình hiện tại (sau khi đã khôi phục xong) để mở lại tab quay về đúng chỗ.
+  useEffect(() => {
+    if (!authChecked) return
+    if (REMEMBERED_SCREENS.includes(screen)) localStorage.setItem(SCREEN_KEY, screen)
+  }, [screen, authChecked])
+
+  useEffect(() => {
+    boot()
+  }, [boot])
 
   // Kiểm tra tính năng AI có bật ở backend không (để ẩn/hiện đúng trạng thái).
   useEffect(() => {
@@ -128,6 +162,8 @@ export default function App() {
 
   const onLogout = useCallback(() => {
     clearToken()
+    localStorage.removeItem(SCREEN_KEY)
+    resetAllRuns() // xóa phân tích AI đang giữ trong store + hủy stream nền, tránh rò rỉ sang phiên khác
     setUser(null)
     setScreen('landing')
   }, [])
@@ -136,6 +172,29 @@ export default function App() {
     setNewsState('loading')
     setTimeout(() => setNewsState('ready'), 1200)
   }, [])
+
+  // ---------- lỗi tạm thời khi khôi phục phiên (mất mạng/backend cold start) ----------
+  if (!authChecked && bootError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100">
+        <div className="flex max-w-sm flex-col items-center gap-4 text-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-base font-extrabold text-white">
+            S
+          </div>
+          <p className="text-sm font-medium text-slate-600">
+            Không thể kết nối tới máy chủ. Phiên đăng nhập của bạn vẫn còn hiệu lực — vui lòng thử lại.
+          </p>
+          <button
+            type="button"
+            onClick={boot}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // ---------- splash trong lúc khôi phục phiên ----------
   if (!authChecked) {
@@ -200,6 +259,8 @@ export default function App() {
             />
           ) : screen === 'portfolio' ? (
             <Portfolio billing={billing} onRefreshBilling={refreshBilling} onNavigate={go} />
+          ) : screen === 'community' ? (
+            <Community user={user} />
           ) : screen === 'checkout' ? (
             <Checkout
               plan={checkout.plan}
@@ -217,7 +278,14 @@ export default function App() {
               onUpgraded={onUpgraded}
             />
           ) : (
-            <Dashboard newsState={newsState} onRetryNews={retryNews} />
+            <Dashboard
+              user={user}
+              newsState={newsState}
+              onRetryNews={retryNews}
+              billing={billing}
+              onRefreshBilling={refreshBilling}
+              onNavigate={go}
+            />
           )}
         </div>
       </main>

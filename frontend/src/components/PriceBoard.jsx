@@ -17,7 +17,8 @@ const WATCH_KEY = 'ss.watchlist'
 const MAX_WATCH = 30
 
 // Đọc/ghi danh mục theo dõi ở localStorage (DB hoá sau).
-function loadWatch() {
+// Export cho thẻ "AI nhận định thị trường" gửi kèm danh mục khi phân tích.
+export function loadWatch() {
   try {
     const arr = JSON.parse(localStorage.getItem(WATCH_KEY))
     if (Array.isArray(arr) && arr.length) return arr.map((c) => String(c).toUpperCase())
@@ -71,6 +72,7 @@ export default function PriceBoard() {
   const [adding, setAdding] = useState(false)
   const [addValue, setAddValue] = useState('')
   const [universe, setUniverse] = useState([])
+  const [reloadKey, setReloadKey] = useState(0) // tăng để nạp lại khi lỗi thoáng qua (nút "Thử lại")
 
   const watchKey = watch.join(',')
 
@@ -104,7 +106,7 @@ export default function PriceBoard() {
     load(true)
     if (open) timer = setInterval(() => load(false), 20000)
     return () => { cancelled = true; if (timer) clearInterval(timer) }
-  }, [tab, watchKey])
+  }, [tab, watchKey, reloadKey])
 
   const addCode = (code) => {
     const c = String(code || '').trim().toUpperCase()
@@ -206,6 +208,12 @@ export default function PriceBoard() {
       {error ? (
         <div className="flex items-center gap-2 px-5 py-8 text-sm text-slate-500">
           <AlertCircle size={18} className="text-red-500" /> {error}
+          <button
+            onClick={() => setReloadKey((k) => k + 1)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <Refresh size={13} /> Thử lại
+          </button>
         </div>
       ) : loading && rows.length === 0 ? (
         <div className="px-5 py-3">

@@ -28,10 +28,11 @@ function CiteChip({ domain, url }) {
   )
 }
 
-// ---- inline: **đậm**, *nghiêng*, `code`, [text](url), ⟦domain|url⟧ (chip nguồn) ----
+// ---- inline: **đậm**, *nghiêng*, `code`, [text](url), ⟦domain|url⟧ (chip nguồn),
+//      [^n] (footnote → số mũ) ----
 function parseInline(text) {
   const nodes = []
-  const re = /(\*\*([^*]+)\*\*|\*([^*\n]+)\*|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|⟦([^|⟧]+)\|(https?:\/\/[^⟧]+)⟧)/
+  const re = /(\*\*([^*]+)\*\*|\*([^*\n]+)\*|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|⟦([^|⟧]+)\|(https?:\/\/[^⟧]+)⟧|\[\^([^\]]+)\])/
   let rest = text
   let k = 0
   while (rest) {
@@ -46,6 +47,7 @@ function parseInline(text) {
     else if (m[4] !== undefined) nodes.push(<code key={k++} className="rounded bg-slate-100 px-1 py-0.5 text-[12px] text-slate-700">{m[4]}</code>)
     else if (m[5] !== undefined) nodes.push(<a key={k++} href={m[6]} target="_blank" rel="noreferrer" className="text-blue-600 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-600">{m[5]}</a>)
     else if (m[7] !== undefined) nodes.push(<CiteChip key={k++} domain={m[7]} url={m[8]} />)
+    else if (m[9] !== undefined) nodes.push(<sup key={k++} className="ml-px text-[10px] font-semibold text-blue-500">{m[9]}</sup>)
     rest = rest.slice(m.index + m[0].length)
   }
   return nodes
@@ -93,7 +95,15 @@ function Table({ rows, k }) {
 }
 
 export default function Markdown({ text = '' }) {
-  const lines = text.replace(/\r\n/g, '\n').split('\n')
+  // Tách định nghĩa footnote "[^n]: …" ra khỏi luồng chính, gom lại để render
+  // thành mục "Ghi chú nguồn" gọn ở cuối (thay vì in nguyên văn giữa bài).
+  const footnotes = []
+  const lines = []
+  for (const raw of text.replace(/\r\n/g, '\n').split('\n')) {
+    const fn = /^\s*\[\^([^\]]+)\]:\s*(.*)$/.exec(raw)
+    if (fn) footnotes.push({ label: fn[1], text: fn[2] })
+    else lines.push(raw)
+  }
   const blocks = []
   let i = 0
   let k = 0
@@ -175,5 +185,19 @@ export default function Markdown({ text = '' }) {
     blocks.push(<p key={k++} className="my-1 leading-relaxed">{parseInline(para.join(' '))}</p>)
   }
 
-  return <div>{blocks}</div>
+  return (
+    <div>
+      {blocks}
+      {footnotes.length > 0 && (
+        <div className="mt-3 space-y-1 border-t border-slate-100 pt-2">
+          {footnotes.map((f, idx) => (
+            <p key={idx} className="text-[11.5px] leading-snug text-slate-400">
+              <sup className="mr-1 font-semibold text-blue-500">{f.label}</sup>
+              {parseInline(f.text)}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }

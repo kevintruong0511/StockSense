@@ -106,12 +106,45 @@ CREATE TABLE IF NOT EXISTS trades (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS trades_user_idx ON trades (user_id, ticker, trade_date);
+
+-- ── Cộng Đồng: bài đăng + bình luận (lồng nhau) + lượt thích ──────────────────
+-- Bài đăng: chữ + ảnh (URL Cloudinary, KHÔNG lưu base64 để nhẹ DB).
+CREATE TABLE IF NOT EXISTS community_posts (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content    TEXT NOT NULL,
+  images     JSONB NOT NULL DEFAULT '[]'::jsonb,   -- ["https://res.cloudinary.com/..."]
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Feed "mới nhất": duyệt theo thời gian giảm dần.
+CREATE INDEX IF NOT EXISTS community_posts_created_idx ON community_posts (created_at DESC);
+
+-- Bình luận: parent_id NULL = bình luận gốc; có giá trị = trả lời bình luận khác (lồng nhau).
+CREATE TABLE IF NOT EXISTS community_comments (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id    UUID NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  parent_id  UUID REFERENCES community_comments(id) ON DELETE CASCADE,
+  content    TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS community_comments_post_idx ON community_comments (post_id, created_at);
+
+-- Lượt thích: mỗi user thích 1 bài tối đa 1 lần (PK kép).
+CREATE TABLE IF NOT EXISTS community_likes (
+  post_id    UUID NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (post_id, user_id)
+);
+-- Đếm nhanh lượt thích của 1 bài.
+CREATE INDEX IF NOT EXISTS community_likes_post_idx ON community_likes (post_id);
 `
 
 async function main() {
   try {
     await pool.query(SQL)
-    console.log('[initDb] Đã tạo/kiểm tra schema (users, ai_usage, payment_orders, promo_codes, chat_sessions, chat_messages, trades) thành công.')
+    console.log('[initDb] Đã tạo/kiểm tra schema (users, ai_usage, payment_orders, promo_codes, chat_sessions, chat_messages, trades, community_posts, community_comments, community_likes) thành công.')
   } catch (err) {
     console.error('[initDb] Khởi tạo schema thất bại:', err.message)
     process.exitCode = 1

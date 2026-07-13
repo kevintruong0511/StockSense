@@ -5,8 +5,9 @@ import { query } from '../db.js'
 import { dailyLimit, effectivePlan, resolveModelTier } from '../billing/plans.js'
 import { consume, getUsage } from '../billing/usage.js'
 import { getMarketNews, getMarketOverview } from '../market/marketOverview.js'
+import { getPriceBoard, VN30 } from '../market/priceBoard.js'
 import { getStockSnapshot, getTickerUniverse } from '../market/stockData.js'
-import { BASE_SYSTEM, buildContext } from '../ai/analyst.js'
+import { BASE_SYSTEM, MARKET_SYSTEM, buildContext, buildMarketContext } from '../ai/analyst.js'
 import { runAnalysisStream } from '../ai/analysisStream.js'
 import {
   addMessage,
@@ -92,6 +93,69 @@ router.delete('/sessions/:id', async (req, res) => {
     console.error('[ai:sessions:delete]', err)
     res.status(500).json({ error: 'Không xóa được cuộc trò chuyện.' })
   }
+})
+
+// Phân tích THỊ TRƯỜNG (Dashboard) — SSE. Nạp VN-Index + độ rộng + bảng giá VN30
+// + danh mục theo dõi (codes từ client, lưu localStorage) + tin CafeF; AI research
+// vĩ mô qua web_search. Trừ 1 lượt theo gói y hệt các phân tích khác.
+router.post('/analyze-market', async (req, res) => {
+  if (!config.ai.enabled) {
+    return res.status(503).json({ error: 'Tính năng AI chưa được cấu hình (thiếu DEEPSEEK_API_KEY).' })
+  }
+
+  // Danh mục theo dõi từ client (tùy chọn): lọc mã hợp lệ, bỏ trùng, tối đa 30.
+  const watchCodes = [
+    ...new Set(
+      (Array.isArray(req.body?.codes) ? req.body.codes : [])
+        .map((c) => String(c).trim().toUpperCase())
+        .filter((c) => /^[A-Z0-9]{2,10}$/.test(c)),
+    ),
+  ].slice(0, 30)
+
+  // Giới hạn lượt theo gói + chốt model (y hệt /analyze).
+  let modelId = config.ai.modelFlash
+  try {
+    const { rows } = await query('SELECT plan, plan_expires_at FROM users WHERE id = $1', [req.userId])
+    const plan = effectivePlan(rows[0])
+    const limit = dailyLimit(plan)
+    if (limit !== Infinity) {
+      const used = await getUsage(req.userId)
+      if (used >= limit) {
+        return res.status(429).json({
+          error: `Bạn đã dùng hết ${limit} lượt phân tích AI hôm nay (gói ${plan}). Nâng cấp gói để tiếp tục.`,
+          code: 'quota_exceeded',
+          plan,
+          limit,
+          used,
+        })
+      }
+    }
+    const tier = resolveModelTier(plan, req.body?.model)
+    modelId = tier === 'pro' ? config.ai.model : config.ai.modelFlash
+    await consume(req.userId)
+  } catch (err) {
+    console.error('[ai:market:quota]', err)
+    return res.status(500).json({ error: 'Không kiểm tra được hạn mức, vui lòng thử lại.' })
+  }
+
+  // Dữ liệu THẬT trong ngày: VN-Index + độ rộng, tin CafeF, bảng giá VN30 + danh mục.
+  const [overview, news, vn30Board, watchBoard] = await Promise.all([
+    getMarketOverview().catch(() => null),
+    getMarketNews({ size: 10 }).catch(() => null),
+    getPriceBoard(VN30).catch(() => null),
+    watchCodes.length ? getPriceBoard(watchCodes).catch(() => null) : null,
+  ])
+
+  const system = MARKET_SYSTEM + '\n\n' + buildMarketContext({ overview, news, vn30Board, watchBoard })
+  const messages = [
+    {
+      role: 'user',
+      content:
+        'Hãy phân tích toàn cảnh thị trường chứng khoán Việt Nam hôm nay (diễn biến phiên, biến động nổi bật, dòng tiền, vĩ mô) và đưa nhận định & chiến lược theo khung đã hướng dẫn.',
+    },
+  ]
+
+  await runAnalysisStream({ req, res, system, messages, modelId })
 })
 
 // Phân tích / chat AI — trả về SSE (text/event-stream) để stream token realtime.

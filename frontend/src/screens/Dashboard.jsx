@@ -3,6 +3,7 @@ import { Clock, LineChart, AlertCircle } from '../components/icons.jsx'
 import { tickerBadge } from '../data/stocks.js'
 import { fetchMarketOverview, fetchMarketNews, fetchTopAnalyzed } from '../data/market.js'
 import PriceBoard from '../components/PriceBoard.jsx'
+import MarketAiCard from '../components/MarketAiCard.jsx'
 
 const UP = '#16A34A'
 const DOWN = '#DC2626'
@@ -11,15 +12,28 @@ const BLUE = '#2563EB'
 // Màu theo chiều VN-Index.
 const vniColor = (pct) => (pct >= 0 ? UP : DOWN)
 
-// Lời chào theo giờ Việt Nam.
+// Giờ hiện tại theo múi giờ Việt Nam (0–23). Dùng formatToParts + en-GB (24 giờ)
+// để KHÔNG phụ thuộc cách trình duyệt render chuỗi 'hour12: false' — vài trình duyệt
+// vẫn trả kiểu 12 giờ khiến 20h bị đọc thành 8 (→ chào nhầm "buổi sáng"). % 24 đưa
+// mốc nửa đêm ('24') về 0.
+function vnHour() {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    hour: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date())
+  return Number(parts.find((p) => p.type === 'hour')?.value) % 24
+}
+
+// Lời chào + emoji + lời chúc theo buổi trong ngày (giờ Việt Nam).
 function greeting() {
-  const h = Number(
-    new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', hour12: false }).format(new Date()),
-  )
-  if (h < 11) return 'Chào buổi sáng'
-  if (h < 13) return 'Chào buổi trưa'
-  if (h < 18) return 'Chào buổi chiều'
-  return 'Chào buổi tối'
+  const h = vnHour()
+  if (h < 5) return { hi: 'Chào bạn', emoji: '🌙', wish: 'Khuya rồi, nhớ giữ gìn sức khỏe nhé!' }
+  if (h < 11) return { hi: 'Chào buổi sáng', emoji: '👋', wish: 'Chúc bạn một ngày giao dịch thuận lợi!' }
+  if (h < 13) return { hi: 'Chào buổi trưa', emoji: '☀️', wish: 'Chúc bạn buổi trưa nghỉ ngơi thật thoải mái!' }
+  if (h < 18) return { hi: 'Chào buổi chiều', emoji: '🌤️', wish: 'Chúc bạn một buổi chiều hiệu quả!' }
+  if (h < 22) return { hi: 'Chào buổi tối', emoji: '🌆', wish: 'Chúc bạn buổi tối an lành bên gia đình!' }
+  return { hi: 'Chào buổi tối', emoji: '🌙', wish: 'Khuya rồi, nghỉ ngơi sớm để giữ sức khỏe nhé!' }
 }
 
 // % thay đổi giá (số thật từ bảng giá) → chuỗi hiển thị + màu.
@@ -70,7 +84,7 @@ function buildDashStats(vni, breadth) {
   ]
 }
 
-export default function Dashboard({ newsState: newsStateProp, onRetryNews }) {
+export default function Dashboard({ user, newsState: newsStateProp, onRetryNews, billing, onRefreshBilling, onNavigate }) {
   // Dữ liệu thị trường thật.
   const [dashStats, setDashStats] = useState(null)
   const [dashLoading, setDashLoading] = useState(true)
@@ -80,6 +94,8 @@ export default function Dashboard({ newsState: newsStateProp, onRetryNews }) {
   const [newsError, setNewsError] = useState(null)
   const [topItems, setTopItems] = useState(null) // mã được phân tích nhiều (thật)
   const [topLoading, setTopLoading] = useState(true)
+
+  const greet = greeting()
 
   // Gộp trạng thái news (user-triggered retry vs initial load).
   const effectiveNewsLoading = newsStateProp === 'loading' || (newsLoading && newsData === null)
@@ -127,9 +143,12 @@ export default function Dashboard({ newsState: newsStateProp, onRetryNews }) {
       {/* heading */}
       <div className="mb-[22px] flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h1 className="m-0 mb-1 text-[26px] font-extrabold tracking-[-0.02em]">{greeting()} 👋</h1>
+          <h1 className="m-0 mb-1 text-[26px] font-extrabold tracking-[-0.02em]">
+            {greet.hi}
+            {user?.name ? `, ${user.name}` : ''} {greet.emoji}
+          </h1>
           <p className="m-0 text-sm text-slate-500">
-            Tổng quan danh mục theo dõi và diễn biến thị trường hôm nay.
+            {greet.wish} Cùng xem diễn biến thị trường hôm nay.
           </p>
         </div>
         <div className="flex items-center gap-[7px] text-[12.5px] text-slate-400">
@@ -166,6 +185,9 @@ export default function Dashboard({ newsState: newsStateProp, onRetryNews }) {
       </div>
 
       <div className="grid gap-5">
+        {/* AI nhận định toàn cảnh thị trường: phiên + biến động + vĩ mô, kèm nguồn */}
+        <MarketAiCard billing={billing} onRefreshBilling={onRefreshBilling} onNavigate={onNavigate} />
+
         {/* bảng điện — giá thật trong ngày (VNDIRECT), tab Danh mục/VN30, tự làm mới trong giờ giao dịch */}
         <PriceBoard />
 

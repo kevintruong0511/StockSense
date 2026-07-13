@@ -1,9 +1,10 @@
-import { Grid, Sparkle, Wallet, LogOut } from './icons.jsx'
+import { Grid, Sparkle, Wallet, Users, LogOut } from './icons.jsx'
 
 const NAV = [
   { key: 'dashboard', label: 'Trang chủ', Icon: Grid },
-  { key: 'ai', label: 'Phân tích AI', Icon: Sparkle },
+  { key: 'ai', label: 'Phân tích cổ phiếu', Icon: Sparkle },
   { key: 'portfolio', label: 'Danh mục', Icon: Wallet },
+  { key: 'community', label: 'Cộng Đồng', Icon: Users },
 ]
 
 // Lấy 2 ký tự viết tắt từ tên để làm avatar.

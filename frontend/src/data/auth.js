@@ -49,7 +49,10 @@ export async function api(path, { method = 'GET', body, auth = false } = {}) {
 
   if (!res.ok) {
     // Ưu tiên thông báo cụ thể từ server; nếu không có thì suy ra theo mã HTTP.
-    throw new Error(data?.error || fallbackMessage(res.status))
+    // Gắn `status` để nơi gọi phân biệt được 401 (token sai/hết hạn) với lỗi tạm thời khác.
+    const err = new Error(data?.error || fallbackMessage(res.status))
+    err.status = res.status
+    throw err
   }
   return data
 }

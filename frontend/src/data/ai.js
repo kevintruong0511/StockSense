@@ -30,6 +30,30 @@ export async function fetchTickers() {
   }
 }
 
+// Stream AI phân tích TOÀN CẢNH THỊ TRƯỜNG (Dashboard). codes = danh mục theo dõi
+// (tùy chọn) để AI nhận xét thêm. Trả về hàm abort().
+export function streamMarketAnalyze({ codes, model, onToken, onSources, onStatus, onReset, onDone, onError }) {
+  return streamSSE({
+    path: '/ai/analyze-market',
+    body: { codes, model },
+    onEvent: (evt) => {
+      if (evt.type === 'token') onToken?.(evt.text || '')
+      else if (evt.type === 'sources') onSources?.(Array.isArray(evt.items) ? evt.items : [])
+      else if (evt.type === 'status') onStatus?.({ phase: evt.phase, query: evt.query || '' })
+      else if (evt.type === 'reset') onReset?.()
+      else if (evt.type === 'done') {
+        onDone?.()
+        return true
+      } else if (evt.type === 'error') {
+        onError?.(evt.error || 'Lỗi không xác định từ AI.')
+        return true
+      }
+    },
+    onEnd: () => onDone?.(),
+    onError,
+  })
+}
+
 // Gửi hội thoại và stream kết quả. Trả về hàm abort().
 // Callbacks: onSession({id,title}), onToken(text), onCitation({url,title,cited_text}),
 // onSources([{url,title}]), onStatus({phase,query}), onReset(), onDone(), onError(message).

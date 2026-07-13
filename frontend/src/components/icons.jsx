@@ -238,3 +238,43 @@ export const LogOut = (p) => (
     <path d="M16 17l5-5-5-5M21 12H9" />
   </Icon>
 )
+
+export const Users = (p) => (
+  <Icon {...p}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M3 20a6 6 0 0 1 12 0" />
+    <path d="M16 5a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-4-5.7" />
+  </Icon>
+)
+
+// fill điều khiển bằng prop `fill` (mặc định 'none'); khi đã like ta truyền fill="currentColor".
+export const Heart = (p) => (
+  <Icon {...p}>
+    <path d="M12 20.7 4.5 13.2a4.6 4.6 0 0 1 6.5-6.5l1 1 1-1a4.6 4.6 0 0 1 6.5 6.5z" />
+  </Icon>
+)
+
+export const Comment = (p) => (
+  <Icon {...p}>
+    <path d="M21 11.5a8 8 0 0 1-11.5 7.2L3 21l2.3-6.5A8 8 0 1 1 21 11.5z" />
+  </Icon>
+)
+
+export const Send = (p) => (
+  <Icon {...p}>
+    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4z" />
+  </Icon>
+)
+
+export const Reply = (p) => (
+  <Icon {...p}>
+    <path d="M9 17l-5-5 5-5" />
+    <path d="M4 12h11a5 5 0 0 1 5 5v2" />
+  </Icon>
+)
+
+export const Close = (p) => (
+  <Icon {...p}>
+    <path d="M18 6 6 18M6 6l12 12" />
+  </Icon>
+)

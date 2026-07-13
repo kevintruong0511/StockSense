@@ -218,6 +218,97 @@ export function buildPortfolioContext({ holdings = [], realized = {}, board, ove
   return '# Dữ liệu tham khảo\n' + lines.join('\n');
 }
 
+// ── PHÂN TÍCH THỊ TRƯỜNG (Dashboard) ────────────────────────────────────────
+// Vai trò chiến lược gia thị trường: đọc toàn cảnh phiên (VN-Index, độ rộng, bảng
+// giá VN30 + danh mục theo dõi, tin tức) + research vĩ mô qua web_search rồi RA
+// NHẬN ĐỊNH & CHIẾN LƯỢC rõ ràng. Giữ triết lý sản phẩm: quyết định rõ, trích
+// nguồn qua web_search, KHÔNG disclaimer.
+export const MARKET_SYSTEM = `Bạn là chiến lược gia thị trường chứng khoán Việt Nam (HOSE/HNX/UPCoM) trong ứng dụng StockSense VN.
+
+Nhiệm vụ: phân tích TOÀN CẢNH thị trường hôm nay — diễn biến phiên, biến động nổi bật, dòng tiền, vĩ mô trong nước & thế giới — rồi ĐƯA RA NHẬN ĐỊNH & CHIẾN LƯỢC hành động rõ ràng cho nhà đầu tư.
+
+Cách làm:
+- RESEARCH KỸ bằng web_search TRƯỚC KHI kết luận. Tìm NHIỀU truy vấn, mỗi truy vấn một khía cạnh: diễn biến & nguyên nhân phiên hôm nay, nhóm ngành/cổ phiếu dẫn dắt & bị bán, khối ngoại mua/bán ròng, tin vĩ mô trong nước (lãi suất, tỷ giá, chính sách, GDP/CPI), thị trường thế giới đêm qua & sáng nay (Mỹ, châu Á, giá dầu/vàng/hàng hóa), sự kiện sắp tới ảnh hưởng thị trường. Dùng đủ ngân sách tìm kiếm rồi HOÀN TẤT ngay trong lượt này. Đối chiếu ≥2 nguồn cho số liệu/sự kiện then chốt. Ưu tiên nguồn uy tín (CafeF, Vietstock, VNDIRECT, SSI, báo chính thống).
+- Dùng số liệu ở "Dữ liệu tham khảo" (VN-Index, độ rộng, bảng giá) làm nền — đó là số THẬT trong ngày. TUYỆT ĐỐI KHÔNG bịa số/ngày/sự kiện; thiếu thì nói rõ "chưa có dữ liệu".
+- Mọi câu ý chính / số liệu lấy từ web phải dựa trên kết quả web_search để hệ thống tự gắn trích dẫn NGAY SAU CÂU đó. TUYỆT ĐỐI KHÔNG tự gõ tên nguồn trong ngoặc (đừng viết "(CafeF)", "(theo …)").
+- Trình bày tiếng Việt, markdown, số kiểu Việt Nam (nghìn = dấu chấm, thập phân = dấu phẩy).
+
+Đi THẲNG vào phân tích, trình bày theo khung:
+## Toàn cảnh phiên hôm nay
+VN-Index (điểm, %, thanh khoản), độ rộng thị trường (mã tăng/giảm), diễn biến trong phiên (mở cửa/giữa phiên/ATC nếu tìm được), so sánh với phiên trước.
+## Biến động nổi bật trong ngày
+Mã/nhóm tăng-giảm mạnh nhất (từ bảng giá đã cho + web_search), GIẢI THÍCH NGUYÊN NHÂN từng biến động lớn (tin doanh nghiệp, dòng tiền, khối ngoại, tin ngành).
+## Dòng tiền & nhóm ngành
+Nhóm ngành hút tiền / bị rút tiền; khối ngoại mua/bán ròng (mã nào, bao nhiêu); thanh khoản so trung bình.
+## Vĩ mô & thế giới
+Các yếu tố vĩ mô đang chi phối, MỖI yếu tố nêu HƯỚNG tác động (hỗ trợ ↑ / gây áp lực ↓) và MỨC ĐỘ (cao/trung bình/thấp): lãi suất & tỷ giá, chính sách trong nước, chứng khoán thế giới, giá hàng hóa liên quan, sự kiện sắp tới.
+## Danh mục theo dõi của bạn
+CHỈ khi "Dữ liệu tham khảo" có mục danh mục theo dõi: nhận xét NGẮN từng mã (biến động hôm nay + tin đáng chú ý nếu có qua web_search). Không có thì BỎ HẲN mục này.
+## NHẬN ĐỊNH & CHIẾN LƯỢC
+- Mục CHỐT — đúc kết từ TẤT CẢ các phần trên, phải NHẤT QUÁN.
+- **Xu hướng ngắn hạn** (vài phiên tới → 2 tuần): tăng / giảm / đi ngang, kèm **độ tin cậy dạng PHẦN TRĂM** (con số % phản ánh đúng độ chắc, 40–85%; nêu ngắn gọn vì sao).
+- **Kịch bản cụ thể với MỐC VN-Index:** kịch bản tích cực (vượt kháng cự X → mục tiêu Y) và tiêu cực (thủng hỗ trợ Z → lùi về T) — nêu CON SỐ điểm.
+- **Hành động đề xuất:** tỷ trọng cổ phiếu/tiền mặt; nhóm ngành/loại cổ phiếu NÊN ưu tiên và NÊN tránh; việc cần làm ngay (chốt lời/hạ tỷ trọng/giải ngân từng phần/đứng ngoài).
+- 3–5 lý do đanh thép rút từ phân tích trên.
+
+Kết thúc bằng chính mục NHẬN ĐỊNH & CHIẾN LƯỢC. KHÔNG thêm câu miễn trừ trách nhiệm.`;
+
+// Một dòng bảng giá cho context: mã (tên): giá | %hôm nay | KL.
+function boardLine(r) {
+  const vol =
+    r.volume == null
+      ? '—'
+      : r.volume >= 1e6
+        ? (r.volume / 1e6).toFixed(1).replace('.', ',') + ' triệu'
+        : Math.round(r.volume / 1e3).toLocaleString('vi-VN') + ' nghìn';
+  return `- ${r.code}${r.name ? ` (${r.name})` : ''}: ${fmtVnd(r.price)}đ | ${fmtPct1(r.pctChange)} hôm nay | KL ${vol}`;
+}
+
+// Ghép "Dữ liệu tham khảo" cho phân tích THỊ TRƯỜNG: VN-Index + độ rộng, bảng giá
+// VN30 (xếp theo % giảm dần cho dễ thấy mã dẫn dắt/bị bán), danh mục theo dõi, tin CafeF.
+export function buildMarketContext({ overview, news, vn30Board, watchBoard }) {
+  const lines = [];
+  lines.push(
+    `Thời điểm phân tích: ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} (giờ VN).`,
+  );
+
+  if (overview?.vni && overview.vni.source === 'vndirect') {
+    const v = overview.vni;
+    let s = `\nVN-Index: ${v.index?.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} điểm (${v.pct >= 0 ? '+' : ''}${v.pct?.toFixed(2)}% hôm nay)`;
+    if (v.vol != null) s += `, khối lượng khớp lệnh ${(v.vol / 1e6).toFixed(1).replace('.', ',')} triệu cp`;
+    lines.push(s + '.');
+  }
+  if (overview?.breadth && overview.breadth.source !== 'unavailable') {
+    const b = overview.breadth;
+    lines.push(`Độ rộng rổ VN30: ${b.gainers} mã tăng / ${b.losers} mã giảm / ${b.unchanged} đứng giá.`);
+  }
+
+  const sortRows = (board) =>
+    (board?.rows || []).filter((r) => r.price != null).sort((a, b) => (b.pctChange ?? -999) - (a.pctChange ?? -999));
+
+  const vn30 = sortRows(vn30Board);
+  if (vn30.length) {
+    lines.push(
+      `\n## Bảng giá rổ VN30 (VNDIRECT, trễ ~15', xếp theo % thay đổi giảm dần)${vn30Board.asOf ? ` — phiên ${vn30Board.asOf}${vn30Board.asOfTime ? ' ' + vn30Board.asOfTime : ''}` : ''}`,
+    );
+    for (const r of vn30) lines.push(boardLine(r));
+  }
+
+  const watch = sortRows(watchBoard);
+  if (watch.length) {
+    lines.push('\n## Danh mục theo dõi của người dùng (xếp theo % thay đổi giảm dần)');
+    for (const r of watch) lines.push(boardLine(r));
+  }
+
+  const items = Array.isArray(news?.items) ? news.items.slice(0, 10) : [];
+  if (items.length) {
+    lines.push('\n## Tin tức thị trường gần đây (nguồn CafeF)');
+    for (const it of items) lines.push(`- [${it.relative || ''}] ${it.title}`);
+  }
+
+  return '# Dữ liệu tham khảo\n' + lines.join('\n');
+}
+
 // Lọc rò rỉ token gọi tool NATIVE của DeepSeek lọt vào văn bản. Khi research nhiều,
 // DeepSeek đôi khi phun khối `<｜｜DSML｜｜tool_calls> … </｜｜DSML｜｜tool_calls>` ra dưới
 // dạng text thay vì gọi tool có cấu trúc. Ký tự '｜' (U+FF5C) KHÔNG bao giờ xuất hiện

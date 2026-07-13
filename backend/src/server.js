@@ -6,6 +6,7 @@ import stockRoutes from './routes/stocks.js'
 import aiRoutes from './routes/ai.js'
 import portfolioRoutes from './routes/portfolio.js'
 import billingRoutes from './routes/billing.js'
+import communityRoutes from './routes/community.js'
 
 const app = express()
 
@@ -19,6 +20,7 @@ app.use('/api/stocks', stockRoutes)
 app.use('/api/ai', aiRoutes)
 app.use('/api/portfolio', portfolioRoutes)
 app.use('/api/billing', billingRoutes)
+app.use('/api/community', communityRoutes)
 
 // Bắt lỗi JSON hỏng và các lỗi chưa xử lý.
 app.use((err, _req, res, _next) => {

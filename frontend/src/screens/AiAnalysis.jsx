@@ -7,6 +7,23 @@ import TickerPicker from '../components/TickerPicker.jsx'
 import { STOCKS } from '../data/stocks.js'
 import { streamAnalyze, fetchTickers } from '../data/ai.js'
 import { listSessions, getSessionMessages, deleteSession } from '../data/chat.js'
+import { useAiRun, patchRun, getRun } from '../data/aiRunStore.js'
+
+// Store bền cho hội thoại + lượt đang stream — sống qua chuyển màn nên AI chạy tiếp ở
+// nền và quay lại thấy đúng chỗ. Chỉ giữ state hội thoại/stream ở đây; input nháp
+// (câu hỏi, ảnh, ghi chú), danh sách phiên, model… vẫn là state cục bộ (tự nạp lại).
+const AI_KEY = 'ai:analysis'
+const AI_INITIAL = {
+  chat: [], // {role, content, sources?, hadInline?, images?}
+  activeSessionId: null,
+  ticker: 'FPT',
+  live: '', // đoạn assistant đang stream
+  liveSources: [],
+  liveStatus: null, // {phase, query}
+  streaming: false,
+  error: '',
+  quotaHit: false,
+}
 
 // Thời gian tương đối kiểu Việt cho danh sách phiên.
 function timeAgo(iso) {
@@ -195,22 +212,24 @@ function QuotaModal({ plan, limit, onUpgrade, onClose }) {
 }
 
 export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNavigate }) {
-  const [ticker, setTicker] = useState('FPT')
+  // Hội thoại + lượt stream lấy từ store bền (giữ khi chuyển màn). setTicker/setChat…
+  // là helper ghi vào store để phần render bên dưới không phải đổi.
+  const [aiRun, patchAi] = useAiRun(AI_KEY, AI_INITIAL)
+  const { chat, live, liveSources, liveStatus, streaming, error, quotaHit, ticker, activeSessionId } = aiRun
+  const setTicker = (v) => patchAi({ ticker: typeof v === 'function' ? v(getRun(AI_KEY).ticker) : v })
+  const setChat = (v) => patchAi((s) => ({ ...s, chat: typeof v === 'function' ? v(s.chat) : v }))
+  const setLive = (v) => patchAi((s) => ({ ...s, live: typeof v === 'function' ? v(s.live) : v }))
+  const setError = (v) => patchAi({ error: v })
+  const setQuotaHit = (v) => patchAi({ quotaHit: v })
+  const setActiveSessionId = (v) => patchAi({ activeSessionId: v })
+
   const [userContext, setUserContext] = useState('')
   const [showContext, setShowContext] = useState(false)
-  const [chat, setChat] = useState([]) // {role, content}
-  const [live, setLive] = useState('') // đoạn assistant đang stream
-  const [liveSources, setLiveSources] = useState([]) // nguồn AI trích trong lượt đang stream
-  const [liveStatus, setLiveStatus] = useState(null) // {phase,query} trạng thái AI đang làm
-  const [streaming, setStreaming] = useState(false)
-  const [error, setError] = useState('')
-  const [quotaHit, setQuotaHit] = useState(false) // đã hết lượt hôm nay (HTTP 429)
   const [question, setQuestion] = useState('')
   const [images, setImages] = useState([]) // ảnh đính kèm cho lượt hỏi sắp gửi
   const fileInputRef = useRef(null)
   const [universe, setUniverse] = useState([]) // toàn bộ mã niêm yết (gợi ý)
   const [sessions, setSessions] = useState([]) // danh sách phiên chat (panel trái)
-  const [activeSessionId, setActiveSessionId] = useState(null) // phiên đang mở (null = phiên mới)
   const [model, setModel] = useState('flash') // bậc model AI cho lượt phân tích: 'flash' | 'pro'
   const userPickedModelRef = useRef(false) // user đã tự chọn model chưa (để không tự đổi đè)
 
@@ -249,7 +268,6 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
   // Mở lại một phiên cũ: nạp toàn bộ tin nhắn từ server.
   async function openSession(id) {
     if (streaming || id === activeSessionId) return
-    abortRef.current?.()
     try {
       const { session, messages } = await getSessionMessages(id)
       setChat(
@@ -295,11 +313,6 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
     }
   }
 
-  const liveRef = useRef('')
-  const liveSourcesRef = useRef([])
-  const lastCiteRef = useRef(null) // URL vừa trích (chống chèn chip trùng liền nhau)
-  const citedCountRef = useRef(0) // số chip inline đã chèn (để quyết định có hiện list fallback)
-  const abortRef = useRef(null)
   const bottomRef = useRef(null)
   const stickBottomRef = useRef(true) // chỉ tự cuộn khi user đang ở gần đáy
 
@@ -321,7 +334,8 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
     bottomRef.current?.scrollIntoView({ block: 'end' })
   }, [chat, live])
 
-  useEffect(() => () => abortRef.current?.(), []) // hủy stream khi rời màn
+  // KHÔNG hủy stream khi unmount — để AI chạy tiếp ở nền; hội thoại + lượt live giữ
+  // trong store bền, quay lại màn sẽ hydrate lại đúng chỗ đang stream/đã xong.
 
   // Thêm ảnh vào ô soạn (từ nút chọn, dán, hoặc kéo-thả). Bỏ file không phải ảnh, giới
   // hạn tổng MAX_IMAGES; ảnh lớn được thu nhỏ/nén trong fileToAttachment.
@@ -350,101 +364,97 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
   }
 
   function runSend(text, baseChat, imgs = []) {
-    if (streaming || (!text.trim() && imgs.length === 0)) return
+    if (getRun(AI_KEY).streaming || (!text.trim() && imgs.length === 0)) return
     stickBottomRef.current = true // gửi câu mới → bám đáy trở lại để thấy câu hỏi + trả lời
-    setError('')
-    setQuotaHit(false)
     const userMsg = { role: 'user', content: text, ...(imgs.length ? { images: imgs } : {}) }
     const msgs = [...baseChat, userMsg]
-    setChat(msgs)
-    setLive('')
-    liveRef.current = ''
-    liveSourcesRef.current = []
-    lastCiteRef.current = null
-    citedCountRef.current = 0
-    setLiveSources([])
-    setLiveStatus({ phase: 'thinking' })
-    setStreaming(true)
+    // Mở lượt mới: ghi hội thoại + reset live vào store (một lần, đồng bộ).
+    patchRun(AI_KEY, (s) => ({
+      ...s,
+      chat: msgs,
+      live: '',
+      liveSources: [],
+      liveStatus: { phase: 'thinking' },
+      streaming: true,
+      error: '',
+      quotaHit: false,
+    }))
 
-    const resetLive = () => {
-      liveRef.current = ''
-      setLive('')
-      liveSourcesRef.current = []
-      lastCiteRef.current = null
-      citedCountRef.current = 0
-      setLiveSources([])
-      setLiveStatus(null)
-      setStreaming(false)
+    // State per-lượt giữ trong CLOSURE (không phải ref/state component) → cập nhật được
+    // cả khi component đã unmount vì rời màn; mọi thay đổi ghi thẳng vào store bền.
+    let liveText = ''
+    let liveSrc = []
+    let lastCite = null // URL vừa trích (chống chèn chip trùng liền nhau)
+    let citedCount = 0 // số chip inline đã chèn
+
+    const resetLive = () =>
+      patchRun(AI_KEY, { live: '', liveSources: [], liveStatus: null, streaming: false })
+    const appendAssistant = () => {
+      if (!liveText) return
+      const hadInline = citedCount > 0
+      patchRun(AI_KEY, (s) => ({
+        ...s,
+        chat: [...s.chat, { role: 'assistant', content: liveText, sources: liveSrc, hadInline }],
+      }))
     }
 
     const t = ticker.trim().toUpperCase()
-    abortRef.current = streamAnalyze({
+    const abort = streamAnalyze({
       ticker: t || undefined,
       stock: STOCKS[t] || undefined,
       userContext: userContext.trim() || undefined,
       messages: msgs.map(toWireMsg),
-      sessionId: activeSessionId || undefined,
+      sessionId: getRun(AI_KEY).activeSessionId || undefined,
       model, // backend vẫn kẹp lại theo gói — đây chỉ là lựa chọn của user
       onSession: ({ id }) => {
         // Backend trả về id phiên (nhất là phiên mới vừa tạo) → gắn active + cập nhật panel.
-        if (id) setActiveSessionId(id)
+        if (id) patchRun(AI_KEY, { activeSessionId: id })
         refreshSessions()
       },
       onToken: (chunk) => {
-        liveRef.current += chunk
-        lastCiteRef.current = null // có text mới → cho phép trích lại cùng nguồn cho luận điểm sau
-        setLive(liveRef.current)
+        liveText += chunk
+        lastCite = null // có text mới → cho phép trích lại cùng nguồn cho luận điểm sau
+        patchRun(AI_KEY, { live: liveText })
       },
       onCitation: (c) => {
         // Chèn chip nguồn INLINE ngay tại vị trí AI trích; bỏ qua nếu trùng URL liền trước.
-        if (c?.url && c.url !== lastCiteRef.current) {
-          lastCiteRef.current = c.url
-          citedCountRef.current += 1
-          liveRef.current += `⟦${hostOf(c.url)}|${c.url}⟧`
-          setLive(liveRef.current)
+        if (c?.url && c.url !== lastCite) {
+          lastCite = c.url
+          citedCount += 1
+          liveText += `⟦${hostOf(c.url)}|${c.url}⟧`
+          patchRun(AI_KEY, { live: liveText })
         }
       },
       onSources: (items) => {
-        const merged = [...liveSourcesRef.current]
         for (const it of items) {
-          if (it?.url && !merged.some((s) => s.url === it.url)) merged.push({ url: it.url, title: it.title || it.url })
+          if (it?.url && !liveSrc.some((s) => s.url === it.url)) liveSrc.push({ url: it.url, title: it.title || it.url })
         }
-        liveSourcesRef.current = merged
-        setLiveSources(merged)
+        patchRun(AI_KEY, { liveSources: [...liveSrc] })
       },
       onStatus: (st) => {
-        if (st?.phase) setLiveStatus(st)
+        if (st?.phase) patchRun(AI_KEY, { liveStatus: st })
       },
       onReset: () => {
         // Pha research rò rỉ/cụt → backend viết lại. Xóa text đã stream, GIỮ nguồn đã gom.
-        liveRef.current = ''
-        setLive('')
-        setLiveStatus({ phase: 'writing' })
+        liveText = ''
+        patchRun(AI_KEY, { live: '', liveStatus: { phase: 'writing' } })
       },
       onDone: () => {
-        const done = liveRef.current
-        const src = liveSourcesRef.current
-        const hadInline = citedCountRef.current > 0
-        if (done) setChat((c) => [...c, { role: 'assistant', content: done, sources: src, hadInline }])
+        appendAssistant()
         resetLive()
         onRefreshBilling?.() // cập nhật "còn X lượt" sau khi trừ 1 lượt
         refreshSessions() // cập nhật lại thứ tự/tiêu đề phiên sau khi lưu
       },
       onError: (msg, meta) => {
-        const partial = liveRef.current
-        const src = liveSourcesRef.current
-        const hadInline = citedCountRef.current > 0
-        if (partial) setChat((c) => [...c, { role: 'assistant', content: partial, sources: src, hadInline }])
+        appendAssistant()
         resetLive()
         // Hết lượt (429): bỏ dòng lỗi kỹ thuật, hiện hộp nâng cấp riêng bên dưới.
-        if (meta?.code === 'quota_exceeded' || meta?.status === 429) {
-          setQuotaHit(true)
-        } else {
-          setError(msg)
-        }
+        if (meta?.code === 'quota_exceeded' || meta?.status === 429) patchRun(AI_KEY, { quotaHit: true })
+        else patchRun(AI_KEY, { error: msg })
         onRefreshBilling?.()
       },
     })
+    patchRun(AI_KEY, { abort })
   }
 
   const startAnalyze = () => {
@@ -477,7 +487,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
         <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-800">
           <AlertCircle size={20} />
           <div className="text-sm leading-relaxed">
-            <div className="font-semibold">Tính năng Phân tích AI chưa được bật</div>
+            <div className="font-semibold">Tính năng Phân tích cổ phiếu chưa được bật</div>
             <p className="m-0 mt-1">
               Máy chủ chưa cấu hình khóa API (<code>DEEPSEEK_API_KEY</code>). Thêm khóa vào file{' '}
               <code>backend/.env</code> (hoặc biến môi trường trên Render) rồi khởi động lại.
@@ -558,7 +568,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
       <div>
         <h1 className="m-0 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900">
           <Sparkle size={22} className="text-blue-600" />
-          Phân tích AI
+          Phân tích cổ phiếu
         </h1>
         <p className="m-0 mt-1 text-sm text-slate-500">
           Nhập mã bất kỳ — AI tự lấy số liệu <b>thời gian thực</b> (SSI/Vietstock, VNDIRECT dự phòng),
