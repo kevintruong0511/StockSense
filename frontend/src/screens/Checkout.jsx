@@ -127,30 +127,30 @@ export default function Checkout({ plan = 'pro', cycle = 'monthly', onBack, onUp
     <div className="mx-auto w-full max-w-[860px]">
       <button
         onClick={onBack}
-        className="mb-4 text-sm font-medium text-slate-500 hover:text-slate-800"
+        className="mb-4 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
       >
         ← Quay lại bảng giá
       </button>
 
-      <h1 className="m-0 mb-1 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900">
-        <Sparkle size={22} className="text-blue-600" />
+      <h1 className="m-0 mb-1 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900 dark:text-white">
+        <Sparkle size={22} className="text-blue-600 dark:text-blue-400" />
         Thanh toán gói {planName}
       </h1>
-      <p className="m-0 mb-6 text-sm text-slate-500">
+      <p className="m-0 mb-6 text-sm text-slate-500 dark:text-slate-400">
         Quét mã QR bằng app ngân hàng để chuyển khoản — hệ thống tự nhận diện và nâng gói cho bạn.
       </p>
 
       {/* ĐANG TẠO ĐƠN */}
       {status === 'creating' && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
           Đang tạo đơn thanh toán…
         </div>
       )}
 
       {/* LỖI TẠO ĐƠN */}
       {status === 'error' && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-          <div className="flex items-start gap-2 text-sm text-red-700">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 dark:border-red-500/30 dark:bg-red-500/10">
+          <div className="flex items-start gap-2 text-sm text-red-700 dark:text-red-400">
             <AlertCircle size={18} />
             <span>{errorMsg}</span>
           </div>
@@ -165,12 +165,12 @@ export default function Checkout({ plan = 'pro', cycle = 'monthly', onBack, onUp
 
       {/* THÀNH CÔNG */}
       {status === 'paid' && (
-        <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-            <Check size={28} className="text-green-600" />
+        <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center dark:border-green-500/30 dark:bg-green-500/10">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/15">
+            <Check size={28} className="text-green-600 dark:text-green-400" />
           </div>
-          <h2 className="m-0 mb-1.5 text-xl font-extrabold text-green-800">Thanh toán thành công</h2>
-          <p className="m-0 mb-5 text-sm text-green-700">
+          <h2 className="m-0 mb-1.5 text-xl font-extrabold text-green-800 dark:text-green-300">Thanh toán thành công</h2>
+          <p className="m-0 mb-5 text-sm text-green-700 dark:text-green-400">
             Tài khoản của bạn đã được nâng lên <b>gói {planName}</b>. Cảm ơn bạn đã ủng hộ!
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2.5">
@@ -183,7 +183,7 @@ export default function Checkout({ plan = 'pro', cycle = 'monthly', onBack, onUp
             </button>
             <button
               onClick={() => onNavigate?.('dashboard')}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Về trang chủ
             </button>
@@ -193,8 +193,8 @@ export default function Checkout({ plan = 'pro', cycle = 'monthly', onBack, onUp
 
       {/* HẾT HẠN */}
       {status === 'expired' && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
-          <div className="flex items-start gap-2 text-sm text-amber-800">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-500/30 dark:bg-amber-500/10">
+          <div className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
             <AlertCircle size={18} />
             <span>Đơn thanh toán đã hết hạn. Vui lòng tạo đơn mới để lấy mã QR còn hiệu lực.</span>
           </div>
@@ -211,8 +211,8 @@ export default function Checkout({ plan = 'pro', cycle = 'monthly', onBack, onUp
       {status === 'pending' && order && (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-[280px_1fr]">
           {/* QR */}
-          <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-5">
-            <div className="mb-3 flex h-[240px] w-[240px] items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-white">
+          <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-3 flex h-[240px] w-[240px] items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-white dark:border-slate-700">
               {order.qrImageUrl && order.bankAccount ? (
                 <img
                   src={order.qrImageUrl}
@@ -220,26 +220,26 @@ export default function Checkout({ plan = 'pro', cycle = 'monthly', onBack, onUp
                   className="h-full w-full object-contain"
                 />
               ) : (
-                <span className="px-4 text-center text-xs text-slate-400">
+                <span className="px-4 text-center text-xs text-slate-400 dark:text-slate-500">
                   Chưa cấu hình tài khoản nhận tiền (SePay). Dùng nút giả lập bên dưới để test.
                 </span>
               )}
             </div>
-            <div className="tnum text-[13px] text-slate-500">
-              Hết hạn sau <b className="text-slate-800">{fmtCountdown(remainingMs)}</b>
+            <div className="tnum text-[13px] text-slate-500 dark:text-slate-400">
+              Hết hạn sau <b className="text-slate-800 dark:text-slate-200">{fmtCountdown(remainingMs)}</b>
             </div>
           </div>
 
           {/* thông tin chuyển khoản */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <div className="mb-4 flex items-end justify-between border-b border-slate-100 pb-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-4 flex items-end justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
               <div>
-                <div className="text-[12.5px] text-slate-500">Số tiền cần chuyển</div>
-                <div className="tnum text-[28px] font-extrabold leading-tight text-slate-900">
+                <div className="text-[12.5px] text-slate-500 dark:text-slate-400">Số tiền cần chuyển</div>
+                <div className="tnum text-[28px] font-extrabold leading-tight text-slate-900 dark:text-white">
                   {fmt(order.amount)}₫
                 </div>
               </div>
-              <div className="rounded-full bg-blue-50 px-3 py-1 text-[12.5px] font-bold text-blue-600">
+              <div className="rounded-full bg-blue-50 px-3 py-1 text-[12.5px] font-bold text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
                 Gói {planName} · 1 tháng
               </div>
             </div>
@@ -249,14 +249,14 @@ export default function Checkout({ plan = 'pro', cycle = 'monthly', onBack, onUp
               <Row label="Chủ tài khoản" value={order.accountName || '—'} />
               <Row label="Số tài khoản" value={order.bankAccount || 'Chưa cấu hình'} />
               <div>
-                <dt className="text-[12.5px] text-slate-500">Nội dung chuyển khoản</dt>
+                <dt className="text-[12.5px] text-slate-500 dark:text-slate-400">Nội dung chuyển khoản</dt>
                 <dd className="mt-1 flex items-center gap-2">
-                  <code className="rounded-md bg-slate-100 px-2.5 py-1.5 text-[15px] font-bold tracking-wide text-slate-900">
+                  <code className="rounded-md bg-slate-100 px-2.5 py-1.5 text-[15px] font-bold tracking-wide text-slate-900 dark:bg-slate-800 dark:text-slate-100">
                     {order.orderCode}
                   </code>
                   <button
                     onClick={copyContent}
-                    className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-[12.5px] font-semibold text-slate-600 hover:bg-slate-50"
+                    className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-[12.5px] font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                   >
                     {copied ? 'Đã chép' : 'Chép'}
                   </button>
@@ -264,7 +264,7 @@ export default function Checkout({ plan = 'pro', cycle = 'monthly', onBack, onUp
               </div>
             </dl>
 
-            <div className="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-[12.5px] leading-relaxed text-amber-800">
+            <div className="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-[12.5px] leading-relaxed text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
               <InfoCircle size={15} className="mt-px flex-none" />
               <span>
                 Chuyển <b>đúng số tiền</b> và giữ <b>đúng nội dung</b> ở trên để hệ thống tự khớp giao
@@ -282,14 +282,14 @@ export default function Checkout({ plan = 'pro', cycle = 'monthly', onBack, onUp
               {order.mockPay && (
                 <button
                   onClick={doMockPay}
-                  className="rounded-lg border border-dashed border-violet-400 px-3.5 py-2.5 text-[13px] font-semibold text-violet-600 hover:bg-violet-50"
+                  className="rounded-lg border border-dashed border-violet-400 px-3.5 py-2.5 text-[13px] font-semibold text-violet-600 hover:bg-violet-50 dark:border-violet-500/50 dark:text-violet-400 dark:hover:bg-violet-500/10"
                   title="Chỉ hiện ở môi trường dev để test"
                 >
                   Giả lập thanh toán (dev)
                 </button>
               )}
             </div>
-            {errorMsg && <div className="mt-2 text-[13px] font-medium text-red-600">{errorMsg}</div>}
+            {errorMsg && <div className="mt-2 text-[13px] font-medium text-red-600 dark:text-red-400">{errorMsg}</div>}
           </div>
         </div>
       )}
@@ -300,8 +300,8 @@ export default function Checkout({ plan = 'pro', cycle = 'monthly', onBack, onUp
 function Row({ label, value }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <dt className="text-[12.5px] text-slate-500">{label}</dt>
-      <dd className="text-right text-[13.5px] font-semibold text-slate-800">{value}</dd>
+      <dt className="text-[12.5px] text-slate-500 dark:text-slate-400">{label}</dt>
+      <dd className="text-right text-[13.5px] font-semibold text-slate-800 dark:text-slate-200">{value}</dd>
     </div>
   )
 }

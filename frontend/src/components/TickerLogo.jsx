@@ -26,7 +26,7 @@ export default function TickerLogo({ code = '', size = 32, rounded = 'rounded-lg
       alt={code}
       loading="lazy"
       onError={() => setFailed(true)}
-      className={`flex-none border border-slate-100 bg-white object-contain ${rounded} ${className}`}
+      className={`flex-none border border-slate-100 bg-white object-contain dark:border-slate-700 ${rounded} ${className}`}
       style={style}
     />
   )

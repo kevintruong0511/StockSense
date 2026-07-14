@@ -102,7 +102,7 @@ function Bubble({ role, text, sources, images, children }) {
           'max-w-[760px] rounded-2xl px-4 py-3 text-sm leading-relaxed ' +
           (isUser
             ? 'whitespace-pre-wrap bg-blue-600 text-white'
-            : 'border border-slate-200 bg-white text-slate-800 shadow-sm')
+            : 'border border-slate-200 bg-white text-slate-800 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200')
         }
       >
         {imgs.length > 0 && (
@@ -135,7 +135,7 @@ function AttachedImages({ images, onRemove }) {
           <img
             src={im.dataUrl}
             alt={im.name || 'ảnh đính kèm'}
-            className="h-16 w-16 rounded-lg border border-slate-200 object-cover"
+            className="h-16 w-16 rounded-lg border border-slate-200 object-cover dark:border-slate-700"
           />
           <button
             type="button"
@@ -170,24 +170,24 @@ function QuotaModal({ plan, limit, onUpgrade, onClose }) {
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+        className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900"
       >
         <button
           onClick={onClose}
           title="Đóng"
-          className="absolute right-3 top-3 rounded-lg px-2 py-0.5 text-xl leading-none text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          className="absolute right-3 top-3 rounded-lg px-2 py-0.5 text-xl leading-none text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
         >
           ×
         </button>
         <div className="flex justify-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
             <AlertCircle size={26} />
           </div>
         </div>
-        <h2 className="m-0 mt-4 text-center text-lg font-extrabold text-slate-900">
+        <h2 className="m-0 mt-4 text-center text-lg font-extrabold text-slate-900 dark:text-white">
           Đã hết lượt phân tích AI hôm nay
         </h2>
-        <p className="m-0 mt-2 text-center text-sm leading-relaxed text-slate-600">
+        <p className="m-0 mt-2 text-center text-sm leading-relaxed text-slate-600 dark:text-slate-400">
           Bạn đã dùng hết {limit ? `${limit} ` : ''}lượt phân tích của gói <b>{planLabel}</b> hôm nay.
           Nâng cấp để tăng hạn mức (<b>Pro</b> 15 lượt/ngày, <b>Ultra</b> không giới hạn) hoặc quay lại vào ngày mai.
         </p>
@@ -201,7 +201,7 @@ function QuotaModal({ plan, limit, onUpgrade, onClose }) {
           </button>
           <button
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           >
             Để sau
           </button>
@@ -484,7 +484,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
   if (!aiEnabled) {
     return (
       <div className="mx-auto max-w-2xl">
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-800">
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
           <AlertCircle size={20} />
           <div className="text-sm leading-relaxed">
             <div className="font-semibold">Tính năng Phân tích cổ phiếu chưa được bật</div>
@@ -507,14 +507,14 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
         <button
           onClick={newSession}
           disabled={streaming}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           <Plus size={16} />
           Phiên mới
         </button>
-        <div className="flex flex-col gap-0.5 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm">
+        <div className="flex flex-col gap-0.5 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {sessions.length === 0 ? (
-            <p className="m-0 px-2 py-4 text-center text-xs text-slate-400">Chưa có cuộc trò chuyện nào</p>
+            <p className="m-0 px-2 py-4 text-center text-xs text-slate-400 dark:text-slate-500">Chưa có cuộc trò chuyện nào</p>
           ) : (
             sessions.map((s) => {
               const active = s.id === activeSessionId
@@ -524,22 +524,27 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
                   onClick={() => openSession(s.id)}
                   className={
                     'group flex cursor-pointer items-start gap-2 rounded-lg px-2.5 py-2 transition-colors ' +
-                    (active ? 'bg-blue-50' : 'hover:bg-slate-50')
+                    (active ? 'bg-blue-50 dark:bg-blue-500/15' : 'hover:bg-slate-50 dark:hover:bg-slate-800')
                   }
                 >
                   <div className="min-w-0 flex-1">
-                    <div className={'truncate text-[13px] font-medium ' + (active ? 'text-blue-700' : 'text-slate-700')}>
+                    <div
+                      className={
+                        'truncate text-[13px] font-medium ' +
+                        (active ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300')
+                      }
+                    >
                       {s.title}
                     </div>
-                    <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
-                      {s.ticker && <span className="font-semibold text-slate-500">{s.ticker}</span>}
+                    <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                      {s.ticker && <span className="font-semibold text-slate-500 dark:text-slate-400">{s.ticker}</span>}
                       <span>{timeAgo(s.updated_at)}</span>
                     </div>
                   </div>
                   <button
                     onClick={(e) => removeSession(s.id, e)}
                     title="Xóa cuộc trò chuyện"
-                    className="shrink-0 rounded px-1 text-base leading-none text-slate-300 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
+                    className="shrink-0 rounded px-1 text-base leading-none text-slate-300 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100 dark:text-slate-600"
                   >
                     ×
                   </button>
@@ -566,11 +571,11 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
       />
       {/* header */}
       <div>
-        <h1 className="m-0 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900">
-          <Sparkle size={22} className="text-blue-600" />
+        <h1 className="m-0 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900 dark:text-white">
+          <Sparkle size={22} className="text-blue-600 dark:text-blue-400" />
           Phân tích cổ phiếu
         </h1>
-        <p className="m-0 mt-1 text-sm text-slate-500">
+        <p className="m-0 mt-1 text-sm text-slate-500 dark:text-slate-400">
           Nhập mã bất kỳ — AI tự lấy số liệu <b>thời gian thực</b> (SSI/Vietstock, VNDIRECT dự phòng),
           <b> tự research web</b> để bổ sung tin mới nhất và <b>trích nguồn bấm được</b>, rồi đưa ra
           <b> khuyến nghị Mua/Bán/Giữ</b>. Hỏi thêm để đào sâu.
@@ -579,7 +584,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
 
       {/* thanh nhập mã */}
       <div
-        className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           if (e.dataTransfer?.files?.length) {
@@ -590,10 +595,10 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
       >
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Mã cổ phiếu
               {universe.length > 0 && (
-                <span className="font-normal text-slate-400"> · chọn/gõ trong {universe.length.toLocaleString('en-US')} mã niêm yết</span>
+                <span className="font-normal text-slate-400 dark:text-slate-500"> · chọn/gõ trong {universe.length.toLocaleString('en-US')} mã niêm yết</span>
               )}
             </span>
             <TickerPicker value={ticker} onChange={setTicker} universe={universe} onEnter={startAnalyze} />
@@ -601,7 +606,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
 
           {/* chọn model AI — Free bị khóa ở Flash */}
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-slate-500">Model AI</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Model AI</span>
             <ModelToggle model={model} canPro={canProModel} disabled={streaming} onPick={pickModel} />
           </label>
 
@@ -616,7 +621,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
 
           <button
             onClick={() => setShowContext((v) => !v)}
-            className="rounded-lg px-2 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800"
+            className="rounded-lg px-2 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
           >
             {showContext ? 'Ẩn dữ liệu bổ sung' : '+ Thêm dữ liệu của bạn'}
           </button>
@@ -626,7 +631,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
             onClick={() => fileInputRef.current?.click()}
             disabled={streaming || images.length >= MAX_IMAGES}
             title={images.length >= MAX_IMAGES ? `Tối đa ${MAX_IMAGES} ảnh` : 'Đính kèm ảnh để AI đọc cùng phân tích'}
-            className="flex items-center gap-1.5 rounded-lg px-2 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg px-2 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-400 dark:hover:text-slate-200"
           >
             <ImageIcon size={16} />
             {images.length ? `Ảnh (${images.length})` : 'Đính kèm ảnh'}
@@ -637,10 +642,10 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
               className={
                 'ml-auto self-center rounded-full px-3 py-1 text-[12.5px] font-semibold ' +
                 (usage?.unlimited
-                  ? 'bg-violet-50 text-violet-600'
+                  ? 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400'
                   : usage?.remaining > 0
-                    ? 'bg-slate-100 text-slate-600'
-                    : 'bg-red-50 text-red-600')
+                    ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                    : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400')
               }
             >
               {quotaLabel}
@@ -651,7 +656,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
         {images.length > 0 && (
           <div className="mt-3">
             <AttachedImages images={images} onRemove={removeImage} />
-            <p className="m-0 mt-1.5 text-xs text-slate-400">
+            <p className="m-0 mt-1.5 text-xs text-slate-400 dark:text-slate-500">
               {images.length} ảnh sẽ được gửi kèm cho AI đọc cùng phân tích mã {ticker.trim().toUpperCase() || '—'}.
             </p>
           </div>
@@ -663,7 +668,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
             onChange={(e) => setUserContext(e.target.value)}
             rows={4}
             placeholder="Dán thêm số liệu/BCTC/ghi chú của bạn để AI phân tích dựa trên đó…"
-            className="mt-3 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm text-slate-800 outline-none focus:border-blue-500"
+            className="mt-3 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
           />
         )}
       </div>
@@ -683,7 +688,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
 
       {/* lỗi */}
       {error && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           <AlertCircle size={18} />
           <span>{error}</span>
         </div>
@@ -710,20 +715,20 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
           <div ref={bottomRef} />
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-400">
           Nhập mã (VD: FPT, HPG, VHM, DGC…) và bấm{' '}
-          <span className="font-semibold text-slate-700">Phân tích</span> — AI tự nạp số liệu thời gian
+          <span className="font-semibold text-slate-700 dark:text-slate-200">Phân tích</span> — AI tự nạp số liệu thời gian
           thực, research web (kèm nguồn bấm được) rồi bóc tách định giá, red flag, rủi ro và{' '}
-          <span className="font-semibold text-slate-700">chốt Mua/Bán/Giữ</span>. Muốn AI đọc thêm biểu đồ/tài liệu, bấm{' '}
-          <span className="font-semibold text-slate-700">Đính kèm ảnh</span> hoặc{' '}
-          <span className="font-semibold text-slate-700">Thêm dữ liệu của bạn</span> trước khi phân tích.
+          <span className="font-semibold text-slate-700 dark:text-slate-200">chốt Mua/Bán/Giữ</span>. Muốn AI đọc thêm biểu đồ/tài liệu, bấm{' '}
+          <span className="font-semibold text-slate-700 dark:text-slate-200">Đính kèm ảnh</span> hoặc{' '}
+          <span className="font-semibold text-slate-700 dark:text-slate-200">Thêm dữ liệu của bạn</span> trước khi phân tích.
         </div>
       )}
 
       {/* ô hỏi tiếp */}
       {hasConversation && (
         <div
-          className="sticky bottom-4 rounded-xl border border-slate-200 bg-white p-2 shadow-md"
+          className="sticky bottom-4 rounded-xl border border-slate-200 bg-white p-2 shadow-md dark:border-slate-700 dark:bg-slate-900"
           onDragOver={(e) => {
             e.preventDefault()
           }}
@@ -749,7 +754,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
               onClick={() => fileInputRef.current?.click()}
               disabled={streaming || images.length >= MAX_IMAGES}
               title={images.length >= MAX_IMAGES ? `Tối đa ${MAX_IMAGES} ảnh` : 'Đính kèm ảnh (hoặc dán ảnh vào ô)'}
-              className="flex shrink-0 items-center justify-center rounded-lg border border-slate-200 p-2 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex shrink-0 items-center justify-center rounded-lg border border-slate-200 p-2 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
               <ImageIcon size={18} />
             </button>
@@ -760,7 +765,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
               onPaste={onPasteImages}
               disabled={streaming}
               placeholder="Hỏi thêm hoặc dán/đính kèm ảnh… (VD: đọc giúp biểu đồ này)"
-              className="flex-1 bg-transparent px-3 py-2 text-sm text-slate-900 outline-none disabled:opacity-60"
+              className="flex-1 bg-transparent px-3 py-2 text-sm text-slate-900 outline-none disabled:opacity-60 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
             <button
               onClick={sendQuestion}

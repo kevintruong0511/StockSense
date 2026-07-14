@@ -272,29 +272,29 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
     <div className="mx-auto flex max-w-6xl flex-col gap-5">
       {/* header */}
       <div>
-        <h1 className="m-0 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900">
-          <Wallet size={22} className="text-blue-600" />
+        <h1 className="m-0 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900 dark:text-white">
+          <Wallet size={22} className="text-blue-600 dark:text-blue-400" />
           Danh mục đầu tư
         </h1>
-        <p className="m-0 mt-1 text-sm text-slate-500">
+        <p className="m-0 mt-1 text-sm text-slate-500 dark:text-slate-400">
           Ghi lại lệnh <b>Mua/Bán đã khớp</b> → xem <b>giá vốn, lãi/lỗ</b> theo giá cập nhật trong ngày, rồi để{' '}
           <b>AI lập kế hoạch hành động</b> (Giữ / Mua thêm / Chốt lời / Cắt lỗ) cho từng mã.
         </p>
       </div>
 
       {/* form thêm/sửa lệnh */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-200">
           {editingId ? 'Sửa lệnh' : 'Thêm lệnh'}
           {editingId && (
-            <button onClick={resetForm} className="text-xs font-medium text-slate-400 hover:text-slate-700">
+            <button onClick={resetForm} className="text-xs font-medium text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200">
               (hủy sửa)
             </button>
           )}
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-slate-500">Mã cổ phiếu</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Mã cổ phiếu</span>
             <TickerPicker
               value={form.ticker}
               onChange={(v) => setField('ticker', v)}
@@ -304,14 +304,16 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-slate-500">Loại lệnh</span>
-            <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Loại lệnh</span>
+            <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
               <button
                 type="button"
                 onClick={() => setField('side', 'buy')}
                 className={
                   'rounded-md px-3 py-1.5 text-[13px] font-semibold transition-colors ' +
-                  (form.side === 'buy' ? 'bg-green-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800')
+                  (form.side === 'buy'
+                    ? 'bg-green-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100')
                 }
               >
                 Mua
@@ -321,7 +323,9 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
                 onClick={() => setField('side', 'sell')}
                 className={
                   'rounded-md px-3 py-1.5 text-[13px] font-semibold transition-colors ' +
-                  (form.side === 'sell' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800')
+                  (form.side === 'sell'
+                    ? 'bg-red-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100')
                 }
               >
                 Bán
@@ -330,7 +334,7 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-slate-500">Số lượng (cp)</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Số lượng (cp)</span>
             <input
               type="text"
               inputMode="decimal"
@@ -338,12 +342,12 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
               onChange={(e) => setField('quantity', sanitizeNumInput(e.target.value))}
               onKeyDown={(e) => e.key === 'Enter' && submitTrade()}
               placeholder="VD: 1.000"
-              className="tnum w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+              className="tnum w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             />
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-slate-500">Giá khớp (nghìn đ/cp)</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Giá khớp (nghìn đ/cp)</span>
             <input
               type="text"
               inputMode="decimal"
@@ -351,29 +355,29 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
               onChange={(e) => setField('price', sanitizeNumInput(e.target.value))}
               onKeyDown={(e) => e.key === 'Enter' && submitTrade()}
               placeholder="VD: 58.50"
-              className="tnum w-36 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+              className="tnum w-36 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             />
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-slate-500">Ngày</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Ngày</span>
             <input
               type="date"
               value={form.tradeDate}
               max={todayVN()}
               onChange={(e) => setField('tradeDate', e.target.value)}
-              className="tnum rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+              className="tnum rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:[color-scheme:dark]"
             />
           </label>
 
           <label className="flex min-w-[160px] flex-1 flex-col gap-1.5">
-            <span className="text-xs font-semibold text-slate-500">Ghi chú (tùy chọn)</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Ghi chú (tùy chọn)</span>
             <input
               type="text"
               value={form.note}
               onChange={(e) => setField('note', e.target.value)}
               placeholder="Lý do vào/ra lệnh…"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             />
           </label>
 
@@ -387,25 +391,25 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
           </button>
         </div>
         {formError && (
-          <div className="mt-2.5 flex items-center gap-1.5 text-sm text-red-600">
+          <div className="mt-2.5 flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
             <AlertCircle size={15} /> {formError}
           </div>
         )}
       </div>
 
       {loadError && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           <AlertCircle size={18} />
           <span>{loadError}</span>
         </div>
       )}
 
       {/* vị thế đang nắm + nút AI */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3.5">
-          <h2 className="m-0 mr-1 text-base font-bold">Vị thế đang nắm</h2>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
+          <h2 className="m-0 mr-1 text-base font-bold dark:text-white">Vị thế đang nắm</h2>
           {asOf && (
-            <span className="tnum text-[11.5px] text-slate-400">
+            <span className="tnum text-[11.5px] text-slate-400 dark:text-slate-500">
               Giá tới {asOf}
               {asOfTime ? ` ${asOfTime}` : ''}
             </span>
@@ -416,10 +420,10 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
                 className={
                   'hidden rounded-full px-3 py-1 text-[12px] font-semibold sm:inline ' +
                   (usage?.unlimited
-                    ? 'bg-violet-50 text-violet-600'
+                    ? 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400'
                     : usage?.remaining > 0
-                      ? 'bg-slate-100 text-slate-600'
-                      : 'bg-red-50 text-red-600')
+                      ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                      : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400')
                 }
               >
                 {quotaLabel}
@@ -438,16 +442,16 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
         </div>
 
         {loading && holdings.length === 0 ? (
-          <div className="px-5 py-8 text-center text-sm text-slate-400">Đang tải…</div>
+          <div className="px-5 py-8 text-center text-sm text-slate-400 dark:text-slate-500">Đang tải…</div>
         ) : holdings.length === 0 ? (
-          <div className="px-5 py-8 text-center text-sm text-slate-400">
+          <div className="px-5 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
             Chưa có vị thế nào. Thêm lệnh <b>Mua</b> ở trên để bắt đầu theo dõi danh mục.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] border-collapse">
               <thead>
-                <tr className="text-right text-[11px] uppercase tracking-[0.04em] text-slate-400">
+                <tr className="text-right text-[11px] uppercase tracking-[0.04em] text-slate-400 dark:text-slate-500">
                   <th className="px-5 py-2.5 text-left font-semibold">Mã</th>
                   <th className="px-2.5 py-2.5 font-semibold">KL</th>
                   <th className="px-2.5 py-2.5 font-semibold">Giá vốn TB</th>
@@ -461,22 +465,22 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
               </thead>
               <tbody>
                 {holdings.map((h) => (
-                  <tr key={h.ticker} className="group border-t border-slate-100 text-right">
+                  <tr key={h.ticker} className="group border-t border-slate-100 text-right dark:border-slate-800">
                     <td className="px-5 py-3 text-left">
-                      <div className="tnum text-sm font-bold text-slate-900">{h.ticker}</div>
+                      <div className="tnum text-sm font-bold text-slate-900 dark:text-slate-100">{h.ticker}</div>
                       {h.name && (
-                        <div className="max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-slate-400">
+                        <div className="max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-slate-400 dark:text-slate-500">
                           {h.name}
                         </div>
                       )}
                     </td>
-                    <td className="tnum px-2.5 py-3 text-[13px] text-slate-700">{vnd(h.qty)}</td>
-                    <td className="tnum px-2.5 py-3 text-[13px] text-slate-700">{vnd(h.avgCost)}</td>
-                    <td className="tnum px-2.5 py-3 text-[13px] font-semibold text-slate-900">{vnd(h.price)}</td>
+                    <td className="tnum px-2.5 py-3 text-[13px] text-slate-700 dark:text-slate-300">{vnd(h.qty)}</td>
+                    <td className="tnum px-2.5 py-3 text-[13px] text-slate-700 dark:text-slate-300">{vnd(h.avgCost)}</td>
+                    <td className="tnum px-2.5 py-3 text-[13px] font-semibold text-slate-900 dark:text-slate-100">{vnd(h.price)}</td>
                     <td className="tnum px-2.5 py-3 text-[13px]" style={{ color: h.pctChange == null ? '#94A3B8' : upDown(h.pctChange) }}>
                       {pct(h.pctChange)}
                     </td>
-                    <td className="tnum px-2.5 py-3 text-[13px] text-slate-700">{vnd(h.marketValue)}</td>
+                    <td className="tnum px-2.5 py-3 text-[13px] text-slate-700 dark:text-slate-300">{vnd(h.marketValue)}</td>
                     <td className="tnum px-2.5 py-3 text-[13px] font-semibold" style={{ color: h.unrealizedPnl == null ? '#94A3B8' : upDown(h.unrealizedPnl) }}>
                       {signed(h.unrealizedPnl)}
                       {h.unrealizedPct != null && (
@@ -492,7 +496,7 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
                         onClick={() => removeHolding(h.ticker)}
                         disabled={deletingTicker === h.ticker}
                         title={`Xóa ${h.ticker} khỏi danh mục`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-600 dark:hover:bg-red-500/10"
                       >
                         <Trash size={16} />
                       </button>
@@ -501,13 +505,13 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-slate-200 text-right text-[13px] font-bold">
-                  <td className="px-5 py-3 text-left text-slate-500">Tổng</td>
+                <tr className="border-t-2 border-slate-200 text-right text-[13px] font-bold dark:border-slate-700">
+                  <td className="px-5 py-3 text-left text-slate-500 dark:text-slate-400">Tổng</td>
                   <td />
                   <td />
                   <td />
                   <td />
-                  <td className="tnum px-2.5 py-3 text-slate-900">{vnd(totValue)}</td>
+                  <td className="tnum px-2.5 py-3 text-slate-900 dark:text-slate-100">{vnd(totValue)}</td>
                   <td className="tnum px-2.5 py-3" style={{ color: upDown(totPnl) }}>
                     {signed(totPnl)}
                     {totPnlPct != null && <span className="ml-1 text-[11px] font-medium">({pct(totPnlPct)})</span>}
@@ -525,14 +529,14 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
 
       {/* kế hoạch AI */}
       {showPlanCard && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center gap-2 text-base font-bold text-slate-900">
-            <Sparkle size={18} className="text-blue-600" />
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="mb-3 flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
+            <Sparkle size={18} className="text-blue-600 dark:text-blue-400" />
             Kế hoạch AI cho danh mục
           </div>
 
           {quotaHit ? (
-            <div className="flex flex-col items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="flex flex-col items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
               <span>Bạn đã dùng hết lượt phân tích AI hôm nay. Nâng cấp để tăng hạn mức.</span>
               <button
                 onClick={() => onNavigate?.('pricing')}
@@ -542,12 +546,12 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
               </button>
             </div>
           ) : planError ? (
-            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
               <AlertCircle size={18} />
               <span>{planError}</span>
             </div>
           ) : planText ? (
-            <div className="text-sm leading-relaxed text-slate-800">
+            <div className="text-sm leading-relaxed text-slate-800 dark:text-slate-200">
               <Markdown text={planText} />
               {analyzing && <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-blue-500 align-middle" />}
               <SourceChips items={planSources} />
@@ -560,14 +564,14 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
 
       {/* lịch sử lệnh */}
       {trades.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-5 py-3.5">
-            <h2 className="m-0 text-base font-bold">Lịch sử lệnh</h2>
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
+            <h2 className="m-0 text-base font-bold dark:text-white">Lịch sử lệnh</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse">
               <thead>
-                <tr className="text-right text-[11px] uppercase tracking-[0.04em] text-slate-400">
+                <tr className="text-right text-[11px] uppercase tracking-[0.04em] text-slate-400 dark:text-slate-500">
                   <th className="px-5 py-2.5 text-left font-semibold">Ngày</th>
                   <th className="px-2.5 py-2.5 text-left font-semibold">Loại</th>
                   <th className="px-2.5 py-2.5 text-left font-semibold">Mã</th>
@@ -583,25 +587,25 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
                   .slice()
                   .reverse()
                   .map((t) => (
-                    <tr key={t.id} className="group border-t border-slate-100 text-right">
-                      <td className="tnum px-5 py-3 text-left text-[13px] text-slate-600">{t.tradeDate}</td>
+                    <tr key={t.id} className="group border-t border-slate-100 text-right dark:border-slate-800">
+                      <td className="tnum px-5 py-3 text-left text-[13px] text-slate-600 dark:text-slate-400">{t.tradeDate}</td>
                       <td className="px-2.5 py-3 text-left">
                         <span
                           className="rounded-md px-2 py-0.5 text-[12px] font-bold"
                           style={
                             t.side === 'buy'
-                              ? { color: '#16A34A', background: '#DCFCE7' }
-                              : { color: '#DC2626', background: '#FEF2F2' }
+                              ? { color: '#16A34A', background: 'rgba(22,163,74,.14)' }
+                              : { color: '#DC2626', background: 'rgba(220,38,38,.14)' }
                           }
                         >
                           {t.side === 'buy' ? 'Mua' : 'Bán'}
                         </span>
                       </td>
-                      <td className="tnum px-2.5 py-3 text-left text-[13px] font-bold text-slate-900">{t.ticker}</td>
-                      <td className="tnum px-2.5 py-3 text-[13px] text-slate-700">{vnd(t.quantity)}</td>
-                      <td className="tnum px-2.5 py-3 text-[13px] text-slate-700">{vnd(t.price)}</td>
-                      <td className="tnum px-2.5 py-3 text-[13px] text-slate-500">{vnd(t.quantity * t.price)}</td>
-                      <td className="max-w-[220px] overflow-hidden text-ellipsis whitespace-nowrap px-2.5 py-3 text-left text-[12.5px] text-slate-500">
+                      <td className="tnum px-2.5 py-3 text-left text-[13px] font-bold text-slate-900 dark:text-slate-100">{t.ticker}</td>
+                      <td className="tnum px-2.5 py-3 text-[13px] text-slate-700 dark:text-slate-300">{vnd(t.quantity)}</td>
+                      <td className="tnum px-2.5 py-3 text-[13px] text-slate-700 dark:text-slate-300">{vnd(t.price)}</td>
+                      <td className="tnum px-2.5 py-3 text-[13px] text-slate-500 dark:text-slate-400">{vnd(t.quantity * t.price)}</td>
+                      <td className="max-w-[220px] overflow-hidden text-ellipsis whitespace-nowrap px-2.5 py-3 text-left text-[12.5px] text-slate-500 dark:text-slate-400">
                         {t.note || '—'}
                       </td>
                       <td className="px-5 py-3">
@@ -609,14 +613,14 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
                           <button
                             onClick={() => editTrade(t)}
                             title="Sửa lệnh"
-                            className="rounded px-1.5 text-[12px] font-semibold text-slate-400 hover:text-blue-600"
+                            className="rounded px-1.5 text-[12px] font-semibold text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400"
                           >
                             Sửa
                           </button>
                           <button
                             onClick={() => removeTrade(t.id)}
                             title="Xóa lệnh"
-                            className="rounded px-1 text-base leading-none text-slate-300 hover:text-red-500"
+                            className="rounded px-1 text-base leading-none text-slate-300 hover:text-red-500 dark:text-slate-600"
                           >
                             ×
                           </button>

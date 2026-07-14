@@ -76,17 +76,17 @@ function CommentNode({ node, childrenMap, currentUserId, depth, onReply, onDelet
       <div className="flex gap-2">
         <Avatar name={node.author_name} size={28} />
         <div className="min-w-0 flex-1">
-          <div className="rounded-2xl bg-slate-100 px-3 py-2">
+          <div className="rounded-2xl bg-slate-100 px-3 py-2 dark:bg-slate-800">
             <div className="flex items-center gap-2">
-              <span className="text-[13px] font-semibold text-slate-800">{node.author_name || 'Ẩn danh'}</span>
-              <span className="text-[11px] text-slate-400">{timeAgo(node.created_at)}</span>
+              <span className="text-[13px] font-semibold text-slate-800 dark:text-slate-200">{node.author_name || 'Ẩn danh'}</span>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500">{timeAgo(node.created_at)}</span>
             </div>
-            <p className="m-0 mt-0.5 whitespace-pre-wrap break-words text-[13.5px] leading-snug text-slate-700">
+            <p className="m-0 mt-0.5 whitespace-pre-wrap break-words text-[13.5px] leading-snug text-slate-700 dark:text-slate-300">
               {node.content}
             </p>
           </div>
-          <div className="mt-1 flex items-center gap-3 pl-1 text-[12px] font-medium text-slate-400">
-            <button onClick={() => onReply(node)} className="inline-flex items-center gap-1 hover:text-blue-600">
+          <div className="mt-1 flex items-center gap-3 pl-1 text-[12px] font-medium text-slate-400 dark:text-slate-500">
+            <button onClick={() => onReply(node)} className="inline-flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400">
               <Reply size={13} /> Trả lời
             </button>
             {node.user_id === currentUserId && (
@@ -235,20 +235,20 @@ export default function CommunityPost({ post, currentUserId, onDeleted }) {
   const roots = childrenMap.get('root') || []
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       {/* header */}
       <div className="flex items-start gap-2.5">
         <Avatar name={post.author_name} />
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-slate-800">{post.author_name || 'Ẩn danh'}</div>
-          <div className="text-[11.5px] text-slate-400">{timeAgo(post.created_at)}</div>
+          <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">{post.author_name || 'Ẩn danh'}</div>
+          <div className="text-[11.5px] text-slate-400 dark:text-slate-500">{timeAgo(post.created_at)}</div>
         </div>
         {isOwner && (
           <button
             onClick={removePost}
             disabled={deleting}
             title="Xóa bài"
-            className="flex-none rounded-lg p-1.5 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+            className="flex-none rounded-lg p-1.5 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50 dark:text-slate-600 dark:hover:bg-red-500/10"
           >
             <Trash size={16} />
           </button>
@@ -257,19 +257,21 @@ export default function CommunityPost({ post, currentUserId, onDeleted }) {
 
       {/* nội dung */}
       {post.content && (
-        <p className="m-0 mt-2.5 whitespace-pre-wrap break-words text-[14.5px] leading-relaxed text-slate-800">
+        <p className="m-0 mt-2.5 whitespace-pre-wrap break-words text-[14.5px] leading-relaxed text-slate-800 dark:text-slate-200">
           {post.content}
         </p>
       )}
       <ImageGrid images={post.images} />
 
       {/* thanh like / comment */}
-      <div className="mt-3 flex items-center gap-1 border-t border-slate-100 pt-2.5">
+      <div className="mt-3 flex items-center gap-1 border-t border-slate-100 pt-2.5 dark:border-slate-800">
         <button
           onClick={toggleLike}
           className={
             'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold transition-colors ' +
-            (liked ? 'text-red-600 hover:bg-red-50' : 'text-slate-500 hover:bg-slate-100')
+            (liked
+              ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10'
+              : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800')
           }
         >
           <Heart size={17} fill={liked ? 'currentColor' : 'none'} />
@@ -277,7 +279,7 @@ export default function CommunityPost({ post, currentUserId, onDeleted }) {
         </button>
         <button
           onClick={openComments}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold text-slate-500 transition-colors hover:bg-slate-100"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
         >
           <Comment size={16} />
           {commentCount > 0 ? commentCount : ''} Bình luận
@@ -286,9 +288,9 @@ export default function CommunityPost({ post, currentUserId, onDeleted }) {
 
       {/* khối bình luận */}
       {showComments && (
-        <div className="mt-3 border-t border-slate-100 pt-3">
+        <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
           {commentsLoading ? (
-            <div className="py-2 text-center text-[13px] text-slate-400">Đang tải bình luận…</div>
+            <div className="py-2 text-center text-[13px] text-slate-400 dark:text-slate-500">Đang tải bình luận…</div>
           ) : (
             <>
               {roots.length > 0 && (
@@ -309,9 +311,9 @@ export default function CommunityPost({ post, currentUserId, onDeleted }) {
 
               {/* ô nhập bình luận / trả lời */}
               {replyTo && (
-                <div className="mb-1.5 flex items-center gap-2 pl-1 text-[12px] text-slate-500">
-                  <Reply size={13} /> Đang trả lời <b className="text-slate-700">{replyTo.author_name}</b>
-                  <button onClick={() => setReplyTo(null)} className="text-slate-400 hover:text-slate-700">
+                <div className="mb-1.5 flex items-center gap-2 pl-1 text-[12px] text-slate-500 dark:text-slate-400">
+                  <Reply size={13} /> Đang trả lời <b className="text-slate-700 dark:text-slate-200">{replyTo.author_name}</b>
+                  <button onClick={() => setReplyTo(null)} className="text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200">
                     <Close size={13} />
                   </button>
                 </div>
@@ -325,7 +327,7 @@ export default function CommunityPost({ post, currentUserId, onDeleted }) {
                   }}
                   rows={1}
                   placeholder={replyTo ? `Trả lời ${replyTo.author_name}…` : 'Viết bình luận…'}
-                  className="min-h-[38px] w-full resize-y rounded-xl border border-slate-300 px-3 py-2 text-[13.5px] outline-none focus:border-blue-500"
+                  className="min-h-[38px] w-full resize-y rounded-xl border border-slate-300 px-3 py-2 text-[13.5px] outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
                 />
                 <button
                   onClick={submitComment}
@@ -341,7 +343,7 @@ export default function CommunityPost({ post, currentUserId, onDeleted }) {
         </div>
       )}
 
-      {err && <div className="mt-2 text-[12.5px] text-red-600">{err}</div>}
+      {err && <div className="mt-2 text-[12.5px] text-red-600 dark:text-red-400">{err}</div>}
     </div>
   )
 }

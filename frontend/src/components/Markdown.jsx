@@ -11,7 +11,7 @@ function CiteChip({ domain, url }) {
       target="_blank"
       rel="noreferrer"
       title={url}
-      className="mx-0.5 inline-flex translate-y-px items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 align-baseline text-[10.5px] font-medium text-slate-500 no-underline hover:bg-slate-100 hover:text-slate-700"
+      className="mx-0.5 inline-flex translate-y-px items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 align-baseline text-[10.5px] font-medium text-slate-500 no-underline hover:bg-slate-100 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
     >
       <img
         src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
@@ -42,12 +42,12 @@ function parseInline(text) {
       break
     }
     if (m.index > 0) nodes.push(rest.slice(0, m.index))
-    if (m[2] !== undefined) nodes.push(<strong key={k++} className="font-semibold text-slate-900">{m[2]}</strong>)
+    if (m[2] !== undefined) nodes.push(<strong key={k++} className="font-semibold text-slate-900 dark:text-white">{m[2]}</strong>)
     else if (m[3] !== undefined) nodes.push(<em key={k++}>{m[3]}</em>)
-    else if (m[4] !== undefined) nodes.push(<code key={k++} className="rounded bg-slate-100 px-1 py-0.5 text-[12px] text-slate-700">{m[4]}</code>)
-    else if (m[5] !== undefined) nodes.push(<a key={k++} href={m[6]} target="_blank" rel="noreferrer" className="text-blue-600 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-600">{m[5]}</a>)
+    else if (m[4] !== undefined) nodes.push(<code key={k++} className="rounded bg-slate-100 px-1 py-0.5 text-[12px] text-slate-700 dark:bg-slate-800 dark:text-slate-300">{m[4]}</code>)
+    else if (m[5] !== undefined) nodes.push(<a key={k++} href={m[6]} target="_blank" rel="noreferrer" className="text-blue-600 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-600 dark:text-blue-400 dark:decoration-blue-500/50">{m[5]}</a>)
     else if (m[7] !== undefined) nodes.push(<CiteChip key={k++} domain={m[7]} url={m[8]} />)
-    else if (m[9] !== undefined) nodes.push(<sup key={k++} className="ml-px text-[10px] font-semibold text-blue-500">{m[9]}</sup>)
+    else if (m[9] !== undefined) nodes.push(<sup key={k++} className="ml-px text-[10px] font-semibold text-blue-500 dark:text-blue-400">{m[9]}</sup>)
     rest = rest.slice(m.index + m[0].length)
   }
   return nodes
@@ -71,7 +71,7 @@ function Table({ rows, k }) {
           <thead>
             <tr>
               {header.map((h, i) => (
-                <th key={i} className="border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left font-semibold text-slate-700">
+                <th key={i} className="border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                   {parseInline(h)}
                 </th>
               ))}
@@ -82,7 +82,13 @@ function Table({ rows, k }) {
           {body.map((row, ri) => (
             <tr key={ri}>
               {row.map((c, ci) => (
-                <td key={ci} className={'border border-slate-200 px-2.5 py-1.5 align-top ' + (ci === 0 ? 'font-medium text-slate-700' : 'text-slate-600')}>
+                <td
+                  key={ci}
+                  className={
+                    'border border-slate-200 px-2.5 py-1.5 align-top dark:border-slate-700 ' +
+                    (ci === 0 ? 'font-medium text-slate-700 dark:text-slate-300' : 'text-slate-600 dark:text-slate-400')
+                  }
+                >
                   {parseInline(c)}
                 </td>
               ))}
@@ -122,7 +128,7 @@ export default function Markdown({ text = '' }) {
     if (t === '') { i++; continue }
 
     if (/^(-{3,}|\*{3,}|_{3,})$/.test(t)) {
-      blocks.push(<hr key={k++} className="my-3 border-slate-200" />)
+      blocks.push(<hr key={k++} className="my-3 border-slate-200 dark:border-slate-700" />)
       i++
       continue
     }
@@ -131,7 +137,7 @@ export default function Markdown({ text = '' }) {
     if (h) {
       const big = h[1].length <= 2
       blocks.push(
-        <p key={k++} className={(big ? 'mt-3 mb-1 text-[15px] font-bold' : 'mt-2 mb-0.5 text-sm font-semibold') + ' text-slate-900'}>
+        <p key={k++} className={(big ? 'mt-3 mb-1 text-[15px] font-bold' : 'mt-2 mb-0.5 text-sm font-semibold') + ' text-slate-900 dark:text-white'}>
           {parseInline(h[2])}
         </p>,
       )
@@ -189,10 +195,10 @@ export default function Markdown({ text = '' }) {
     <div>
       {blocks}
       {footnotes.length > 0 && (
-        <div className="mt-3 space-y-1 border-t border-slate-100 pt-2">
+        <div className="mt-3 space-y-1 border-t border-slate-100 pt-2 dark:border-slate-800">
           {footnotes.map((f, idx) => (
-            <p key={idx} className="text-[11.5px] leading-snug text-slate-400">
-              <sup className="mr-1 font-semibold text-blue-500">{f.label}</sup>
+            <p key={idx} className="text-[11.5px] leading-snug text-slate-400 dark:text-slate-500">
+              <sup className="mr-1 font-semibold text-blue-500 dark:text-blue-400">{f.label}</sup>
               {parseInline(f.text)}
             </p>
           ))}

@@ -95,13 +95,13 @@ function QuickLink({ Icon, label, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="group flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50"
+      className="group flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-500/40 dark:hover:bg-blue-500/10"
     >
-      <Icon size={17} className="text-blue-600" />
+      <Icon size={17} className="text-blue-600 dark:text-blue-400" />
       {label}
       <ArrowRight
         size={15}
-        className="text-slate-300 transition-colors group-hover:text-blue-500"
+        className="text-slate-300 transition-colors group-hover:text-blue-500 dark:text-slate-600 dark:group-hover:text-blue-400"
       />
     </button>
   );
@@ -116,18 +116,18 @@ export default function Guide({ onNavigate }) {
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
       {/* header */}
       <div>
-        <h1 className="m-0 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900">
-          <BookOpen size={22} className="text-blue-600" />
+        <h1 className="m-0 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900 dark:text-white">
+          <BookOpen size={22} className="text-blue-600 dark:text-blue-400" />
           Hướng dẫn
         </h1>
-        <p className="m-0 mt-1 text-sm text-slate-500">
+        <p className="m-0 mt-1 text-sm text-slate-500 dark:text-slate-400">
           Xem video hướng dẫn và tìm hiểu cách chơi chứng khoán cùng cách áp
           dụng StockSense vào đầu tư.
         </p>
       </div>
 
       {/* video YouTube — khung 16:9 tự co theo màn hình */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-black shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-black shadow-sm dark:border-slate-800">
         <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
           <iframe
             className="absolute inset-0 h-full w-full"
@@ -160,22 +160,22 @@ export default function Guide({ onNavigate }) {
       </div>
 
       {/* nội dung hướng dẫn */}
-      <div className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         {GUIDE_SECTIONS.map((s, i) => (
           <section key={i}>
-            <h2 className="m-0 mb-2 text-lg font-bold text-slate-900">
+            <h2 className="m-0 mb-2 text-lg font-bold text-slate-900 dark:text-white">
               {s.title}
             </h2>
             {s.paragraphs?.map((p, j) => (
               <p
                 key={j}
-                className="m-0 mb-2 text-[14.5px] leading-relaxed text-slate-700"
+                className="m-0 mb-2 text-[14.5px] leading-relaxed text-slate-700 dark:text-slate-300"
               >
                 {p}
               </p>
             ))}
             {s.bullets?.length > 0 && (
-              <ul className="my-1 list-disc space-y-1.5 pl-5 text-[14.5px] leading-relaxed text-slate-700">
+              <ul className="my-1 list-disc space-y-1.5 pl-5 text-[14.5px] leading-relaxed text-slate-700 dark:text-slate-300">
                 {s.bullets.map((b, j) => (
                   <li key={j}>{b}</li>
                 ))}

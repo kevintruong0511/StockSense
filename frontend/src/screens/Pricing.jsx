@@ -17,11 +17,11 @@ const PLANS = [
     annualPerMonth: 0,
     Icon: Search,
     accent: {
-      icon: 'text-slate-600',
-      iconBg: 'bg-slate-100',
-      card: 'border-slate-200',
-      price: 'text-slate-900',
-      btn: 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50',
+      icon: 'text-slate-600 dark:text-slate-300',
+      iconBg: 'bg-slate-100 dark:bg-slate-800',
+      card: 'border-slate-200 dark:border-slate-800',
+      price: 'text-slate-900 dark:text-white',
+      btn: 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800',
     },
     features: [
       'Giá & biểu đồ nến thời gian thực',
@@ -41,10 +41,10 @@ const PLANS = [
     popular: true,
     Icon: Sparkle,
     accent: {
-      icon: 'text-blue-600',
-      iconBg: 'bg-blue-50',
-      card: 'border-blue-600 ring-2 ring-blue-600/50',
-      price: 'text-slate-900',
+      icon: 'text-blue-600 dark:text-blue-400',
+      iconBg: 'bg-blue-50 dark:bg-blue-500/10',
+      card: 'border-blue-600 ring-2 ring-blue-600/50 dark:border-blue-500 dark:ring-blue-500/30',
+      price: 'text-slate-900 dark:text-white',
       btn: 'bg-blue-600 text-white hover:bg-blue-700',
     },
     features: [
@@ -67,10 +67,10 @@ const PLANS = [
     annualPerMonth: 239000,
     Icon: BarChart3,
     accent: {
-      icon: 'text-violet-600',
-      iconBg: 'bg-violet-50',
-      card: 'border-violet-200',
-      price: 'text-slate-900',
+      icon: 'text-violet-600 dark:text-violet-400',
+      iconBg: 'bg-violet-50 dark:bg-violet-500/10',
+      card: 'border-violet-200 dark:border-violet-500/30',
+      price: 'text-slate-900 dark:text-white',
       btn: 'bg-violet-600 text-white hover:bg-violet-700',
     },
     features: [
@@ -121,12 +121,12 @@ const FAQ = [
 function CompareCell({ value }) {
   if (value === true)
     return (
-      <span className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
-        <Check size={12} className="text-green-600" />
+      <span className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/15">
+        <Check size={12} className="text-green-600 dark:text-green-400" />
       </span>
     )
-  if (value === false) return <span className="text-slate-300">—</span>
-  return <span className="text-[13px] font-semibold text-slate-700">{value}</span>
+  if (value === false) return <span className="text-slate-300 dark:text-slate-700">—</span>
+  return <span className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">{value}</span>
 }
 
 // Ô nhập mã ưu đãi → gọi redeem, nâng gói ngay (vd BACUAKHANG → Ultra).
@@ -152,9 +152,9 @@ function PromoBox({ onUpgraded }) {
   }
 
   return (
-    <div className="mx-auto mb-6 max-w-[720px] rounded-xl border border-slate-200 bg-white px-4 py-3.5">
-      <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-slate-700">
-        <Sparkle size={15} className="text-violet-600" />
+    <div className="mx-auto mb-6 max-w-[720px] rounded-xl border border-slate-200 bg-white px-4 py-3.5 dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+        <Sparkle size={15} className="text-violet-600 dark:text-violet-400" />
         Có mã ưu đãi?
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -163,7 +163,7 @@ function PromoBox({ onUpgraded }) {
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           onKeyDown={(e) => e.key === 'Enter' && apply()}
           placeholder="Nhập mã ưu đãi"
-          className="min-w-[200px] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase tracking-wide text-slate-900 outline-none focus:border-violet-500"
+          className="min-w-[200px] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase tracking-wide text-slate-900 outline-none focus:border-violet-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
         />
         <button
           onClick={apply}
@@ -176,7 +176,8 @@ function PromoBox({ onUpgraded }) {
       {msg && (
         <div
           className={
-            'mt-2 text-[13px] font-medium ' + (status === 'ok' ? 'text-green-600' : 'text-red-600')
+            'mt-2 text-[13px] font-medium ' +
+            (status === 'ok' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')
           }
         >
           {msg}
@@ -195,7 +196,7 @@ function PlanCard({ plan, annual, currentPlan, onChoose }) {
   return (
     <div
       className={
-        'relative flex flex-col rounded-2xl border bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,.04)] ' +
+        'relative flex flex-col rounded-2xl border bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,.04)] dark:bg-slate-900 dark:shadow-none ' +
         accent.card +
         (plan.popular ? ' shadow-[0_16px_40px_rgba(37,99,235,.16)]' : '')
       }
@@ -212,8 +213,8 @@ function PlanCard({ plan, annual, currentPlan, onChoose }) {
           <Icon size={20} className={accent.icon} />
         </div>
         <div>
-          <div className="text-lg font-extrabold tracking-[-0.01em]">{plan.name}</div>
-          <div className="text-[12.5px] text-slate-500">{plan.tagline}</div>
+          <div className="text-lg font-extrabold tracking-[-0.01em] dark:text-white">{plan.name}</div>
+          <div className="text-[12.5px] text-slate-500 dark:text-slate-400">{plan.tagline}</div>
         </div>
       </div>
 
@@ -224,9 +225,9 @@ function PlanCard({ plan, annual, currentPlan, onChoose }) {
             {fmt(price)}
             <span className="text-2xl">₫</span>
           </span>
-          {!isFree && <span className="pb-1 text-sm font-medium text-slate-400">/tháng</span>}
+          {!isFree && <span className="pb-1 text-sm font-medium text-slate-400 dark:text-slate-500">/tháng</span>}
         </div>
-        <div className="tnum mt-1.5 text-[12.5px] text-slate-500">
+        <div className="tnum mt-1.5 text-[12.5px] text-slate-500 dark:text-slate-400">
           {isFree
             ? 'Miễn phí mãi mãi'
             : annual
@@ -242,7 +243,7 @@ function PlanCard({ plan, annual, currentPlan, onChoose }) {
         className={
           'mb-5 w-full rounded-lg py-2.5 text-sm font-semibold transition-colors ' +
           (isCurrent
-            ? 'cursor-default border border-slate-200 bg-slate-100 text-slate-500'
+            ? 'cursor-default border border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
             : accent.btn)
         }
       >
@@ -252,9 +253,9 @@ function PlanCard({ plan, annual, currentPlan, onChoose }) {
       {/* tính năng */}
       <ul className="flex flex-1 flex-col gap-2.5">
         {plan.features.map((f) => (
-          <li key={f} className="flex items-start gap-2.5 text-[13.5px] leading-snug text-slate-700">
-            <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-green-100">
-              <Check size={11} className="text-green-600" />
+          <li key={f} className="flex items-start gap-2.5 text-[13.5px] leading-snug text-slate-700 dark:text-slate-300">
+            <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-green-100 dark:bg-green-500/15">
+              <Check size={11} className="text-green-600 dark:text-green-400" />
             </span>
             {f}
           </li>
@@ -290,25 +291,27 @@ export default function Pricing({
     <div className="mx-auto w-full max-w-[1080px]">
       {/* tiêu đề */}
       <div className="mb-7 text-center">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3.5 py-1.5 text-[13px] font-semibold text-blue-600">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3.5 py-1.5 text-[13px] font-semibold text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400">
           <Sparkle size={15} />
           Nâng cấp gói
         </div>
-        <h1 className="m-0 mb-2.5 text-[34px] font-extrabold tracking-[-0.02em] max-sm:text-[26px]">
+        <h1 className="m-0 mb-2.5 text-[34px] font-extrabold tracking-[-0.02em] max-sm:text-[26px] dark:text-white">
           Chọn gói phù hợp với cách bạn đầu tư
         </h1>
-        <p className="mx-auto m-0 max-w-[560px] text-[15px] leading-relaxed text-slate-500">
+        <p className="mx-auto m-0 max-w-[560px] text-[15px] leading-relaxed text-slate-500 dark:text-slate-400">
           Từ nghiên cứu cơ bản đến phân tích chuyên sâu — tất cả đều tập trung vào chất lượng doanh
           nghiệp và minh bạch nguồn dữ liệu.
         </p>
 
         {/* chuyển đổi tháng / năm */}
-        <div className="mt-5 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1">
+        <div className="mt-5 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-900">
           <button
             onClick={() => setAnnual(false)}
             className={
               'rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors ' +
-              (!annual ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900')
+              (!annual
+                ? 'bg-slate-900 text-white dark:bg-slate-700'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white')
             }
           >
             Hàng tháng
@@ -317,14 +320,16 @@ export default function Pricing({
             onClick={() => setAnnual(true)}
             className={
               'flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors ' +
-              (annual ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900')
+              (annual
+                ? 'bg-slate-900 text-white dark:bg-slate-700'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white')
             }
           >
             Hàng năm
             <span
               className={
                 'rounded-full px-1.5 py-px text-[10.5px] font-bold ' +
-                (annual ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700')
+                (annual ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400')
               }
             >
               -20%
@@ -351,29 +356,29 @@ export default function Pricing({
 
       {/* bảng so sánh */}
       <div className="mt-12">
-        <h2 className="mb-4 text-center text-xl font-extrabold tracking-[-0.01em]">So sánh chi tiết</h2>
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+        <h2 className="mb-4 text-center text-xl font-extrabold tracking-[-0.01em] dark:text-white">So sánh chi tiết</h2>
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
           <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-100">
-                <th className="px-5 py-3.5 text-left text-[12.5px] font-semibold uppercase tracking-[0.05em] text-slate-400">
+              <tr className="border-b border-slate-100 dark:border-slate-800">
+                <th className="px-5 py-3.5 text-left text-[12.5px] font-semibold uppercase tracking-[0.05em] text-slate-400 dark:text-slate-500">
                   Tính năng
                 </th>
-                <th className="px-4 py-3.5 text-center text-[13px] font-bold text-slate-700">Free</th>
-                <th className="px-4 py-3.5 text-center text-[13px] font-bold text-blue-600">Pro</th>
-                <th className="px-4 py-3.5 text-center text-[13px] font-bold text-violet-600">Ultra</th>
+                <th className="px-4 py-3.5 text-center text-[13px] font-bold text-slate-700 dark:text-slate-300">Free</th>
+                <th className="px-4 py-3.5 text-center text-[13px] font-bold text-blue-600 dark:text-blue-400">Pro</th>
+                <th className="px-4 py-3.5 text-center text-[13px] font-bold text-violet-600 dark:text-violet-400">Ultra</th>
               </tr>
             </thead>
             <tbody>
               {COMPARE.map((row) => (
-                <tr key={row.label} className="border-t border-slate-100">
-                  <td className="px-5 py-3 text-left text-[13.5px] font-medium text-slate-700">
+                <tr key={row.label} className="border-t border-slate-100 dark:border-slate-800">
+                  <td className="px-5 py-3 text-left text-[13.5px] font-medium text-slate-700 dark:text-slate-300">
                     {row.label}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <CompareCell value={row.free} />
                   </td>
-                  <td className="bg-blue-50/40 px-4 py-3 text-center">
+                  <td className="bg-blue-50/40 px-4 py-3 text-center dark:bg-blue-500/5">
                     <CompareCell value={row.pro} />
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -388,19 +393,19 @@ export default function Pricing({
 
       {/* FAQ */}
       <div className="mt-12">
-        <h2 className="mb-4 text-center text-xl font-extrabold tracking-[-0.01em]">Câu hỏi thường gặp</h2>
+        <h2 className="mb-4 text-center text-xl font-extrabold tracking-[-0.01em] dark:text-white">Câu hỏi thường gặp</h2>
         <div className="mx-auto grid max-w-[820px] gap-3">
           {FAQ.map((item) => (
-            <div key={item.q} className="rounded-xl border border-slate-200 bg-white p-5">
-              <div className="mb-1.5 text-[14.5px] font-bold text-slate-900">{item.q}</div>
-              <p className="m-0 text-[13.5px] leading-relaxed text-slate-600">{item.a}</p>
+            <div key={item.q} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+              <div className="mb-1.5 text-[14.5px] font-bold text-slate-900 dark:text-white">{item.q}</div>
+              <p className="m-0 text-[13.5px] leading-relaxed text-slate-600 dark:text-slate-400">{item.a}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* disclaimer bắt buộc: có nhắc tới nội dung AI */}
-      <div className="mx-auto mt-8 flex max-w-[820px] items-start gap-2 rounded-lg bg-slate-100 px-4 py-3 text-xs leading-relaxed text-slate-500">
+      <div className="mx-auto mt-8 flex max-w-[820px] items-start gap-2 rounded-lg bg-slate-100 px-4 py-3 text-xs leading-relaxed text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
         <InfoCircle size={16} className="mt-px flex-none" />
         <span>
           Giá đã bao gồm thuế GTGT. Nội dung do AI tạo chỉ nhằm mục đích tham khảo và{' '}

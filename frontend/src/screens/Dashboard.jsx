@@ -36,7 +36,7 @@ function greeting() {
 // % thay đổi giá (số thật từ bảng giá) → chuỗi hiển thị + màu.
 const pctFmt = (p) => (p == null ? '—' : (p >= 0 ? '+' : '') + p.toFixed(2) + '%')
 
-export default function Dashboard({ user, newsState: newsStateProp, onRetryNews, billing, onRefreshBilling, onNavigate, onOpenStock }) {
+export default function Dashboard({ user, newsState: newsStateProp, onRetryNews, billing, onRefreshBilling, onNavigate, onOpenStock, theme }) {
   const [newsData, setNewsData] = useState(null)
   const [newsLoading, setNewsLoading] = useState(true)
   const [newsError, setNewsError] = useState(null)
@@ -76,15 +76,15 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
       {/* heading */}
       <div className="mb-[22px] flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h1 className="m-0 mb-1 text-[26px] font-extrabold tracking-[-0.02em]">
+          <h1 className="m-0 mb-1 text-[26px] font-extrabold tracking-[-0.02em] dark:text-white">
             {greet.hi}
             {user?.name ? `, ${user.name}` : ''} {greet.emoji}
           </h1>
-          <p className="m-0 text-sm text-slate-500">
+          <p className="m-0 text-sm text-slate-500 dark:text-slate-400">
             {greet.wish} Cùng xem diễn biến thị trường hôm nay.
           </p>
         </div>
-        <div className="flex items-center gap-[7px] text-[12.5px] text-slate-400">
+        <div className="flex items-center gap-[7px] text-[12.5px] text-slate-400 dark:text-slate-500">
           <Clock size={14} />
           VN-Index, bảng giá &amp; tin tức cập nhật thật trong ngày (nguồn VNDIRECT/CafeF)
         </div>
@@ -92,7 +92,7 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
 
       <div className="grid gap-5">
         {/* tổng quan thị trường — VN-Index (chỉ số + độ rộng) + biểu đồ nến thật */}
-        <MarketOverviewCard />
+        <MarketOverviewCard theme={theme} />
 
         {/* AI nhận định toàn cảnh thị trường: phiên + biến động + vĩ mô, kèm nguồn */}
         <MarketAiCard billing={billing} onRefreshBilling={onRefreshBilling} onNavigate={onNavigate} />
@@ -103,23 +103,23 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
         {/* two widgets */}
         <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5">
           {/* market news */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-              <h2 className="m-0 text-base font-bold">Tin tức nổi bật</h2>
-              <span className="text-xs text-slate-400">Nguồn: CafeF</span>
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+              <h2 className="m-0 text-base font-bold dark:text-white">Tin tức nổi bật</h2>
+              <span className="text-xs text-slate-400 dark:text-slate-500">Nguồn: CafeF</span>
             </div>
 
             {effectiveNewsError && (
               <div className="px-5 py-[34px] text-center">
-                <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
-                  <AlertCircle size={22} className="text-red-600" />
+                <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-red-50 dark:bg-red-500/10">
+                  <AlertCircle size={22} className="text-red-600 dark:text-red-400" />
                 </div>
-                <p className="m-0 mb-3 text-[13.5px] text-slate-600">
+                <p className="m-0 mb-3 text-[13.5px] text-slate-600 dark:text-slate-400">
                   Không tải được tin tức. Vui lòng thử lại.
                 </p>
                 <button
                   onClick={onRetryNews}
-                  className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   Thử lại
                 </button>
@@ -129,7 +129,7 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
             {effectiveNewsLoading && (
               <div className="px-5 pb-4 pt-2">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="border-t border-slate-100 py-3">
+                  <div key={i} className="border-t border-slate-100 py-3 dark:border-slate-800">
                     <div className="ss-skel mb-2 h-[13px] w-[90%]" />
                     <div className="ss-skel h-[11px] w-1/2" />
                   </div>
@@ -145,12 +145,12 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
                     href={n.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block cursor-pointer border-t border-slate-100 py-[13px] transition-opacity hover:opacity-75"
+                    className="block cursor-pointer border-t border-slate-100 py-[13px] transition-opacity hover:opacity-75 dark:border-slate-800"
                   >
-                    <div className="text-[13.5px] font-semibold leading-[1.4] text-slate-800">
+                    <div className="text-[13.5px] font-semibold leading-[1.4] text-slate-800 dark:text-slate-200">
                       {n.title}
                     </div>
-                    <div className="mt-[3px] text-[11.5px] text-slate-400">
+                    <div className="mt-[3px] text-[11.5px] text-slate-400 dark:text-slate-500">
                       CafeF · {n.relative}
                     </div>
                   </a>
@@ -160,10 +160,10 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
           </div>
 
           {/* top analyzed — đếm phiên phân tích thật, % giá thật */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-              <h2 className="m-0 text-base font-bold">Được phân tích nhiều</h2>
-              <span className="inline-flex items-center gap-[5px] text-[11.5px] font-semibold text-blue-600">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+              <h2 className="m-0 text-base font-bold dark:text-white">Được phân tích nhiều</h2>
+              <span className="inline-flex items-center gap-[5px] text-[11.5px] font-semibold text-blue-600 dark:text-blue-400">
                 <LineChart size={13} />
                 7 ngày qua
               </span>
@@ -178,7 +178,7 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
                   </div>
                 ))
               ) : !topItems || topItems.length === 0 ? (
-                <p className="m-0 px-3 py-8 text-center text-[13px] text-slate-400">
+                <p className="m-0 px-3 py-8 text-center text-[13px] text-slate-400 dark:text-slate-500">
                   Chưa có mã nào được phân tích trong 7 ngày qua.
                 </p>
               ) : (
@@ -188,15 +188,15 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
                     <button
                       key={t.code}
                       onClick={() => onOpenStock?.(t.code)}
-                      className="flex w-full items-center gap-3 rounded-[9px] px-2 py-[11px] text-left transition-colors hover:bg-slate-50"
+                      className="flex w-full items-center gap-3 rounded-[9px] px-2 py-[11px] text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
                     >
-                      <span className="tnum w-5 text-center text-[13px] font-extrabold text-slate-300">
+                      <span className="tnum w-5 text-center text-[13px] font-extrabold text-slate-300 dark:text-slate-600">
                         {i + 1}
                       </span>
                       <TickerLogo code={t.code} size={32} />
                       <div className="min-w-0 flex-1 leading-tight">
-                        <div className="tnum text-[13.5px] font-bold">{t.code}</div>
-                        <div className="text-[11.5px] text-slate-400">
+                        <div className="tnum text-[13.5px] font-bold dark:text-slate-100">{t.code}</div>
+                        <div className="text-[11.5px] text-slate-400 dark:text-slate-500">
                           {t.count.toLocaleString('en-US')} lượt phân tích
                         </div>
                       </div>

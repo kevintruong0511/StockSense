@@ -17,6 +17,7 @@ import { getToken, setToken, clearToken, fetchMe } from './data/auth.js'
 import { fetchAiStatus } from './data/ai.js'
 import { getBillingStatus } from './data/billing.js'
 import { resetAllRuns, patchRun } from './data/aiRunStore.js'
+import { useTheme } from './data/theme.js'
 
 // Màn cần đăng nhập: Dashboard + Phân tích cổ phiếu + Danh mục + Cộng Đồng + Hướng dẫn + Chi tiết mã + Thanh toán. Landing công khai.
 const PROTECTED = ['dashboard', 'ai', 'portfolio', 'community', 'guide', 'settings', 'stock', 'checkout']
@@ -39,6 +40,7 @@ export default function App() {
   const [authMode, setAuthMode] = useState('login') // 'login' | 'register' cho màn Auth
   const [selectedTicker, setSelectedTicker] = useState(null) // mã đang xem ở màn chi tiết
   const [settingsTab, setSettingsTab] = useState('account') // mục con đang chọn trong Cài đặt
+  const { theme, effectiveTheme, setTheme } = useTheme() // giao diện Sáng/Tối — chỉ áp cho app shell
 
   // Khôi phục phiên từ token đã lưu, rồi áp deep-link: ?screen=dashboard
   // requestId chặn race khi boot() được gọi lại (nút "Thử lại") trong lúc lần gọi trước chưa xong.
@@ -268,8 +270,13 @@ export default function App() {
   }
 
   // ---------- app shell ----------
+  // Class 'dark' chỉ gắn ở đây — Landing/Auth/Pricing (khách) không dùng class dark: nên luôn sáng.
+  // Bọc thêm 1 lớp ngoài chỉ để gắn class 'dark': Tailwind sinh selector kiểu
+  // `.dark\:bg-x:is(.dark *)` — yêu cầu phần tử có dark: phải là HẬU DUỆ của .dark,
+  // nên không thể gắn 'dark' và 'dark:bg-slate-950' trên CÙNG một div.
   return (
-    <div className="flex min-h-screen">
+    <div className={effectiveTheme === 'dark' ? 'dark' : ''}>
+    <div className="flex min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <Sidebar
         screen={screen}
         settingsTab={settingsTab}
@@ -301,6 +308,7 @@ export default function App() {
                 code={selectedTicker}
                 onBack={() => go('dashboard')}
                 onAnalyze={analyzeTicker}
+                theme={effectiveTheme}
               />
             ) : (
               <Dashboard
@@ -311,12 +319,20 @@ export default function App() {
                 onRefreshBilling={refreshBilling}
                 onNavigate={go}
                 onOpenStock={openStock}
+                theme={effectiveTheme}
               />
             )
           ) : screen === 'guide' ? (
             <Guide onNavigate={go} />
           ) : screen === 'settings' ? (
-            <Settings user={user} onUserUpdate={setUser} onNavigate={go} tab={settingsTab} />
+            <Settings
+              user={user}
+              onUserUpdate={setUser}
+              onNavigate={go}
+              tab={settingsTab}
+              theme={theme}
+              onThemeChange={setTheme}
+            />
           ) : screen === 'checkout' ? (
             <Checkout
               plan={checkout.plan}
@@ -342,10 +358,12 @@ export default function App() {
               onRefreshBilling={refreshBilling}
               onNavigate={go}
               onOpenStock={openStock}
+              theme={effectiveTheme}
             />
           )}
         </div>
       </main>
+    </div>
     </div>
   )
 }

@@ -75,10 +75,10 @@ export default function MarketAiCard({ billing, onRefreshBilling, onNavigate }) 
   const showBody = analyzing || text || error || quotaHit || done
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3.5">
-        <h2 className="m-0 mr-1 flex items-center gap-2 text-base font-bold">
-          <Sparkle size={17} className="text-blue-600" />
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
+        <h2 className="m-0 mr-1 flex items-center gap-2 text-base font-bold dark:text-white">
+          <Sparkle size={17} className="text-blue-600 dark:text-blue-400" />
           AI nhận định thị trường
         </h2>
         <div className="ml-auto flex items-center gap-2">
@@ -87,10 +87,10 @@ export default function MarketAiCard({ billing, onRefreshBilling, onNavigate }) 
               className={
                 'hidden rounded-full px-3 py-1 text-[12px] font-semibold sm:inline ' +
                 (usage?.unlimited
-                  ? 'bg-violet-50 text-violet-600'
+                  ? 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400'
                   : usage?.remaining > 0
-                    ? 'bg-slate-100 text-slate-600'
-                    : 'bg-red-50 text-red-600')
+                    ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                    : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400')
               }
             >
               {quotaLabel}
@@ -111,7 +111,7 @@ export default function MarketAiCard({ billing, onRefreshBilling, onNavigate }) 
       {showBody ? (
         <div className="px-5 py-4">
           {quotaHit ? (
-            <div className="flex flex-col items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="flex flex-col items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
               <span>Bạn đã dùng hết lượt phân tích AI hôm nay. Nâng cấp để tăng hạn mức.</span>
               <button
                 onClick={() => onNavigate?.('pricing')}
@@ -121,12 +121,12 @@ export default function MarketAiCard({ billing, onRefreshBilling, onNavigate }) 
               </button>
             </div>
           ) : error ? (
-            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
               <AlertCircle size={18} />
               <span>{error}</span>
             </div>
           ) : text ? (
-            <div className="text-sm leading-relaxed text-slate-800">
+            <div className="text-sm leading-relaxed text-slate-800 dark:text-slate-200">
               <Markdown text={text} />
               {analyzing && <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-blue-500 align-middle" />}
               <SourceChips items={sources} />
@@ -136,7 +136,7 @@ export default function MarketAiCard({ billing, onRefreshBilling, onNavigate }) 
           )}
         </div>
       ) : (
-        <div className="px-5 py-4 text-[13.5px] text-slate-500">
+        <div className="px-5 py-4 text-[13.5px] text-slate-500 dark:text-slate-400">
           AI đọc <b>VN-Index, bảng giá VN30 + danh mục theo dõi của bạn, tin tức trong ngày</b> và tự research{' '}
           <b>vĩ mô trong nước &amp; thế giới</b>, rồi đưa <b>nhận định xu hướng + chiến lược hành động</b> kèm nguồn
           trích dẫn.

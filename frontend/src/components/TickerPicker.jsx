@@ -9,9 +9,9 @@ const POPULAR_CODES = [
 ]
 
 const floorStyle = (f) => {
-  if (f === 'HOSE') return 'bg-blue-50 text-blue-600'
-  if (f === 'HNX') return 'bg-green-50 text-green-600'
-  return 'bg-amber-50 text-amber-600' // UPCoM / khác
+  if (f === 'HOSE') return 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
+  if (f === 'HNX') return 'bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400'
+  return 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400' // UPCoM / khác
 }
 
 // Combobox chọn mã: gõ để lọc trong toàn bộ danh sách, hoặc duyệt danh sách phổ biến.
@@ -91,8 +91,8 @@ export default function TickerPicker({ value, onChange, universe = [], onEnter, 
 
   return (
     <div ref={boxRef} className="relative">
-      <div className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 focus-within:border-blue-500">
-        <Search size={16} className="text-slate-400" />
+      <div className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 focus-within:border-blue-500 dark:border-slate-600 dark:bg-slate-900">
+        <Search size={16} className="text-slate-400 dark:text-slate-500" />
         <input
           value={value}
           onChange={(e) => {
@@ -102,17 +102,17 @@ export default function TickerPicker({ value, onChange, universe = [], onEnter, 
           onFocus={() => setOpen(true)}
           onKeyDown={onKey}
           placeholder="Gõ mã hoặc tên DN… (VD: FPT, VHM, Hòa Phát)"
-          className="w-64 bg-transparent text-sm font-semibold uppercase text-slate-900 outline-none placeholder:font-normal placeholder:normal-case placeholder:text-slate-400"
+          className="w-64 bg-transparent text-sm font-semibold uppercase text-slate-900 outline-none placeholder:font-normal placeholder:normal-case placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
       </div>
 
       {open && (
         <div
           ref={listRef}
-          className="absolute z-20 mt-1 max-h-80 w-[380px] max-w-[86vw] overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+          className="absolute z-20 mt-1 max-h-80 w-[380px] max-w-[86vw] overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
         >
           {results.label && (
-            <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
               {results.label}
             </div>
           )}
@@ -124,11 +124,11 @@ export default function TickerPicker({ value, onChange, universe = [], onEnter, 
               onClick={() => pick(t.code)}
               className={
                 'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left ' +
-                (idx === hi ? 'bg-blue-50' : 'hover:bg-slate-50')
+                (idx === hi ? 'bg-blue-50 dark:bg-blue-500/15' : 'hover:bg-slate-50 dark:hover:bg-slate-800')
               }
             >
-              <span className="w-14 flex-none text-sm font-bold text-slate-900">{t.code}</span>
-              <span className="min-w-0 flex-1 truncate text-xs text-slate-500">{t.name}</span>
+              <span className="w-14 flex-none text-sm font-bold text-slate-900 dark:text-slate-100">{t.code}</span>
+              <span className="min-w-0 flex-1 truncate text-xs text-slate-500 dark:text-slate-400">{t.name}</span>
               {t.floor && (
                 <span className={'flex-none rounded px-1.5 py-0.5 text-[10px] font-semibold ' + floorStyle(t.floor)}>
                   {t.floor}

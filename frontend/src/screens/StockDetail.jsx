@@ -38,9 +38,12 @@ const trendColor = (x) => (x == null ? '#64748B' : x >= 0 ? UP : DOWN)
 // Ô số liệu nhỏ.
 function Stat({ label, value, color }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-      <div className="mb-1 text-[12px] font-semibold text-slate-500">{label}</div>
-      <div className="tnum text-[15px] font-bold" style={color ? { color } : undefined}>
+    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-1 text-[12px] font-semibold text-slate-500 dark:text-slate-400">{label}</div>
+      <div
+        className={'tnum text-[15px] font-bold' + (color ? '' : ' dark:text-slate-100')}
+        style={color ? { color } : undefined}
+      >
         {value}
       </div>
     </div>
@@ -49,14 +52,14 @@ function Stat({ label, value, color }) {
 
 function Section({ title, children }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5">
-      <h3 className="m-0 mb-3.5 text-[15px] font-bold text-slate-900">{title}</h3>
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+      <h3 className="m-0 mb-3.5 text-[15px] font-bold text-slate-900 dark:text-white">{title}</h3>
       {children}
     </div>
   )
 }
 
-export default function StockDetail({ code, onBack, onAnalyze }) {
+export default function StockDetail({ code, onBack, onAnalyze, theme }) {
   const [tf, setTf] = useState('6M')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -105,7 +108,7 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
 
   const p = data?.price
   const up = p?.pctChange != null && p.pctChange >= 0
-  const priceColor = p?.pctChange == null ? '#0F172A' : up ? UP : DOWN
+  const priceColor = p?.pctChange == null ? (theme === 'dark' ? '#F1F5F9' : '#0F172A') : up ? UP : DOWN
 
   return (
     <div>
@@ -113,7 +116,7 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
       <div className="mb-4 flex items-center justify-between gap-3">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           <ArrowRight size={15} className="rotate-180" />
           Quay lại
@@ -129,18 +132,18 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
       </div>
 
       {/* header mã */}
-      <div className="mb-4 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4">
+      <div className="mb-4 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 dark:border-slate-800 dark:bg-slate-900">
         <TickerLogo code={code} size={48} rounded="rounded-xl" />
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="tnum text-2xl font-extrabold tracking-[-0.02em]">{code}</span>
+            <span className="tnum text-2xl font-extrabold tracking-[-0.02em] dark:text-white">{code}</span>
             {data?.exchange && (
-              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                 {data.exchange}
               </span>
             )}
           </div>
-          <div className="max-w-[420px] truncate text-[13px] text-slate-500">
+          <div className="max-w-[420px] truncate text-[13px] text-slate-500 dark:text-slate-400">
             {loading ? 'Đang tải…' : data?.name || '—'}
           </div>
         </div>
@@ -151,18 +154,18 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
             </div>
             <div className="tnum text-[13px] font-bold" style={{ color: priceColor }}>
               {chgStr(p.change)} ({pctRaw(p.pctChange)})
-              {p.date ? <span className="ml-2 font-medium text-slate-400">· phiên {p.date}</span> : null}
+              {p.date ? <span className="ml-2 font-medium text-slate-400 dark:text-slate-500">· phiên {p.date}</span> : null}
             </div>
           </div>
         )}
       </div>
 
       {error ? (
-        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-8 text-sm text-slate-500">
-          <AlertCircle size={18} className="text-red-500" /> {error}
+        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-8 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+          <AlertCircle size={18} className="text-red-500 dark:text-red-400" /> {error}
           <button
             onClick={() => setReloadKey((k) => k + 1)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <Refresh size={13} /> Thử lại
           </button>
@@ -170,16 +173,18 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
       ) : (
         <>
           {/* biểu đồ giá thật + chọn khoảng thời gian */}
-          <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <div className="flex flex-wrap items-center gap-1 border-b border-slate-100 px-4 py-2.5">
-              <span className="mr-1 text-[12.5px] font-semibold text-slate-500">Khung:</span>
+          <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-wrap items-center gap-1 border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
+              <span className="mr-1 text-[12.5px] font-semibold text-slate-500 dark:text-slate-400">Khung:</span>
               {TIMEFRAMES.map(([val, label]) => (
                 <button
                   key={val}
                   onClick={() => setTf(val)}
                   className={
                     'rounded-lg px-2.5 py-1 text-[12.5px] font-semibold transition-colors ' +
-                    (tf === val ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100')
+                    (tf === val
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800')
                   }
                 >
                   {label}
@@ -187,9 +192,12 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
               ))}
             </div>
             {candles && candles.length > 0 ? (
-              <PriceChart candles={candles} height="74vh" />
+              <PriceChart candles={candles} height="74vh" theme={theme} />
             ) : (
-              <div className="flex items-center justify-center text-sm text-slate-400" style={{ height: '74vh' }}>
+              <div
+                className="flex items-center justify-center text-sm text-slate-400 dark:text-slate-500"
+                style={{ height: '74vh' }}
+              >
                 {chartLoading ? 'Đang tải biểu đồ…' : 'Không có dữ liệu biểu đồ cho mã này.'}
               </div>
             )}
@@ -199,7 +207,7 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
           {loading && !data ? (
             <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <div key={i} className="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
                   <div className="ss-skel mb-2 h-3 w-1/2" />
                   <div className="ss-skel h-4 w-2/3" />
                 </div>
@@ -269,18 +277,18 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
               {/* hồ sơ doanh nghiệp */}
               {data.profile && (data.profile.summary || data.profile.foundDate || data.profile.employees) && (
                 <Section title="Hồ sơ doanh nghiệp">
-                  <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1.5 text-[13px] text-slate-500">
-                    {data.profile.floor && <span>Sàn: <b className="text-slate-700">{data.profile.floor}</b></span>}
-                    {data.profile.foundDate && <span>Thành lập: <b className="text-slate-700">{data.profile.foundDate}</b></span>}
-                    {data.profile.employees && <span>Nhân sự: <b className="text-slate-700">{Number(data.profile.employees).toLocaleString('en-US')}</b></span>}
+                  <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1.5 text-[13px] text-slate-500 dark:text-slate-400">
+                    {data.profile.floor && <span>Sàn: <b className="text-slate-700 dark:text-slate-200">{data.profile.floor}</b></span>}
+                    {data.profile.foundDate && <span>Thành lập: <b className="text-slate-700 dark:text-slate-200">{data.profile.foundDate}</b></span>}
+                    {data.profile.employees && <span>Nhân sự: <b className="text-slate-700 dark:text-slate-200">{Number(data.profile.employees).toLocaleString('en-US')}</b></span>}
                   </div>
                   {data.profile.summary && (
-                    <p className="m-0 text-[13.5px] leading-relaxed text-slate-600">{data.profile.summary}</p>
+                    <p className="m-0 text-[13.5px] leading-relaxed text-slate-600 dark:text-slate-400">{data.profile.summary}</p>
                   )}
                 </Section>
               )}
 
-              <p className="text-[12px] text-slate-400">
+              <p className="text-[12px] text-slate-400 dark:text-slate-500">
                 Số liệu cập nhật {data.asOf} · nguồn VNDIRECT. Biểu đồ do TradingView cung cấp.
               </p>
             </div>

@@ -9,7 +9,14 @@ import { createChart, CandlestickSeries, HistogramSeries, CrosshairMode } from '
 const UP = '#16A34A'
 const DOWN = '#DC2626'
 
-export default function PriceChart({ candles, height = '72vh', precision = 0 }) {
+// Bảng màu cho lightweight-charts theo giao diện — thư viện dùng canvas nên không đọc
+// được class Tailwind `dark:`, phải set màu trực tiếp qua applyOptions().
+const PALETTE = {
+  light: { bg: '#ffffff', text: '#334155', grid: '#F1F5F9', border: '#E2E8F0' },
+  dark: { bg: '#0f172a', text: '#CBD5E1', grid: '#1E293B', border: '#334155' },
+}
+
+export default function PriceChart({ candles, height = '72vh', precision = 0, theme = 'light' }) {
   const containerRef = useRef(null)
   const chartRef = useRef(null)
   const candleRef = useRef(null)
@@ -80,6 +87,19 @@ export default function PriceChart({ candles, height = '72vh', precision = 0 }) 
     // Backend đã cắt nến về đúng cửa sổ của preset → chỉ cần fit toàn bộ vào khung nhìn.
     chartRef.current?.timeScale().fitContent()
   }, [candles])
+
+  // Đổi màu chart theo Sáng/Tối — canvas nên phải set trực tiếp, không qua CSS.
+  useEffect(() => {
+    const chart = chartRef.current
+    if (!chart) return
+    const p = PALETTE[theme] || PALETTE.light
+    chart.applyOptions({
+      layout: { background: { color: p.bg }, textColor: p.text },
+      grid: { vertLines: { color: p.grid }, horzLines: { color: p.grid } },
+      rightPriceScale: { borderColor: p.border },
+      timeScale: { borderColor: p.border },
+    })
+  }, [theme])
 
   return <div ref={containerRef} style={{ height, minHeight: 240, width: '100%' }} />
 }

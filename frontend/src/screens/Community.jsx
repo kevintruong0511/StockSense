@@ -83,7 +83,9 @@ export default function Community({ user }) {
       onClick={() => setSort(key)}
       className={
         'rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition-colors ' +
-        (sort === key ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100')
+        (sort === key
+          ? 'bg-blue-600 text-white'
+          : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800')
       }
     >
       {label}
@@ -94,29 +96,29 @@ export default function Community({ user }) {
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
       {/* header */}
       <div>
-        <h1 className="m-0 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900">
-          <Users size={22} className="text-blue-600" />
+        <h1 className="m-0 flex items-center gap-2 text-2xl font-extrabold tracking-[-0.02em] text-slate-900 dark:text-white">
+          <Users size={22} className="text-blue-600 dark:text-blue-400" />
           Cộng Đồng
         </h1>
-        <p className="m-0 mt-1 text-sm text-slate-500">
+        <p className="m-0 mt-1 text-sm text-slate-500 dark:text-slate-400">
           Chia sẻ nhận định, đặt câu hỏi và thảo luận cùng các nhà đầu tư khác.
         </p>
       </div>
 
       {/* composer */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={3}
           placeholder={`${user?.name ? user.name.split(' ').slice(-1)[0] + ' ơi, chia' : 'Chia'} sẻ suy nghĩ của bạn về thị trường…`}
-          className="w-full resize-y rounded-xl border border-slate-300 p-3 text-sm text-slate-800 outline-none focus:border-blue-500"
+          className="w-full resize-y rounded-xl border border-slate-300 p-3 text-sm text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
 
         {images.length > 0 && (
           <div className="mt-2.5 grid grid-cols-4 gap-2">
             {images.map((url, i) => (
-              <div key={i} className="group relative overflow-hidden rounded-lg border border-slate-200">
+              <div key={i} className="group relative overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
                 <img src={url} alt="" className="h-20 w-full object-cover" />
                 <button
                   onClick={() => removeImage(i)}
@@ -131,7 +133,7 @@ export default function Community({ user }) {
         )}
 
         {postError && (
-          <div className="mt-2 flex items-center gap-1.5 text-[13px] text-red-600">
+          <div className="mt-2 flex items-center gap-1.5 text-[13px] text-red-600 dark:text-red-400">
             <AlertCircle size={15} /> {postError}
           </div>
         )}
@@ -153,7 +155,7 @@ export default function Community({ user }) {
               onClick={() => fileRef.current?.click()}
               disabled={uploading || images.length >= MAX_IMAGES}
               title={images.length >= MAX_IMAGES ? `Tối đa ${MAX_IMAGES} ảnh` : 'Đính kèm ảnh'}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
             >
               <ImageIcon size={16} />
               {uploading ? 'Đang tải ảnh…' : images.length ? `Ảnh (${images.length})` : 'Ảnh'}
@@ -170,7 +172,7 @@ export default function Community({ user }) {
       </div>
 
       {/* tabs */}
-      <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+      <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         {tabBtn('new', 'Mới nhất')}
         {tabBtn('top', 'Phổ biến')}
       </div>
@@ -179,7 +181,7 @@ export default function Community({ user }) {
       {loading ? (
         <div className="flex flex-col gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
               <div className="flex gap-2.5">
                 <div className="ss-skel h-9 w-9 rounded-full" />
                 <div className="flex-1">
@@ -193,15 +195,15 @@ export default function Community({ user }) {
           ))}
         </div>
       ) : loadError ? (
-        <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           <AlertCircle size={18} /> {loadError}
           <button onClick={() => load(sort)} className="ml-auto font-semibold underline hover:no-underline">
             Thử lại
           </button>
         </div>
       ) : posts.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-sm text-slate-500">
-          Chưa có bài đăng nào. Hãy là người <span className="font-semibold text-slate-700">đầu tiên chia sẻ</span>!
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-400">
+          Chưa có bài đăng nào. Hãy là người <span className="font-semibold text-slate-700 dark:text-slate-200">đầu tiên chia sẻ</span>!
         </div>
       ) : (
         <div className="flex flex-col gap-4">

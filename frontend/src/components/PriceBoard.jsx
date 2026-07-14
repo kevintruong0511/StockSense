@@ -163,28 +163,34 @@ export default function PriceBoard({ onOpenStock }) {
       onClick={() => setTab(key)}
       className={
         'rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ' +
-        (tab === key ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100')
+        (tab === key
+          ? 'bg-blue-600 text-white'
+          : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700')
       }
     >
       {label}
-      <span className={'ml-1.5 text-[11px] font-medium ' + (tab === key ? 'text-blue-100' : 'text-slate-400')}>
+      <span
+        className={
+          'ml-1.5 text-[11px] font-medium ' + (tab === key ? 'text-blue-100' : 'text-slate-400 dark:text-slate-500')
+        }
+      >
         {count}
       </span>
     </button>
   )
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3.5">
-        <h2 className="m-0 mr-1 text-base font-bold">Bảng giá</h2>
-        <div className="flex flex-wrap items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
+        <h2 className="m-0 mr-1 text-base font-bold dark:text-white">Bảng giá</h2>
+        <div className="flex flex-wrap items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
           {tabBtn('active', 'Phổ biến', 10)}
           {tabBtn('vn30', 'VN30', 30)}
           {tabBtn('gainers', 'Tăng mạnh', 10)}
           {tabBtn('losers', 'Giảm mạnh', 10)}
           {tabBtn('watch', 'Danh mục', watch.length)}
         </div>
-        <div className="ml-auto flex items-center gap-2.5 text-[11.5px] text-slate-400">
+        <div className="ml-auto flex items-center gap-2.5 text-[11.5px] text-slate-400 dark:text-slate-500">
           {live ? (
             <span className="inline-flex items-center gap-1 font-semibold text-green-600">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
@@ -202,8 +208,8 @@ export default function PriceBoard({ onOpenStock }) {
 
       {/* tra cứu mã: gõ/chọn 1 mã bất kỳ → mở thẳng chi tiết + biểu đồ, không phụ thuộc tab đang xem */}
       {onOpenStock && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
-          <span className="text-[13px] font-semibold text-slate-500">Tra cứu mã:</span>
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-5 py-3 dark:border-slate-800 dark:bg-slate-800/30">
+          <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">Tra cứu mã:</span>
           <TickerPicker
             value={lookup}
             onChange={setLookup}
@@ -224,7 +230,7 @@ export default function PriceBoard({ onOpenStock }) {
 
       {/* thanh sửa danh mục */}
       {editable && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-5 py-2.5">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-5 py-2.5 dark:border-slate-800 dark:bg-slate-800/30">
           {adding ? (
             <>
               <TickerPicker
@@ -241,7 +247,7 @@ export default function PriceBoard({ onOpenStock }) {
               </button>
               <button
                 onClick={() => { setAdding(false); setAddValue('') }}
-                className="rounded-lg px-2 py-2 text-[13px] font-medium text-slate-500 hover:text-slate-800"
+                className="rounded-lg px-2 py-2 text-[13px] font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
               >
                 Hủy
               </button>
@@ -250,21 +256,23 @@ export default function PriceBoard({ onOpenStock }) {
             <button
               onClick={() => setAdding(true)}
               disabled={watch.length >= MAX_WATCH}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               <Plus size={15} /> Thêm mã
             </button>
           )}
-          <span className="text-[11.5px] text-slate-400">Danh mục lưu trên trình duyệt · tối đa {MAX_WATCH} mã</span>
+          <span className="text-[11.5px] text-slate-400 dark:text-slate-500">
+            Danh mục lưu trên trình duyệt · tối đa {MAX_WATCH} mã
+          </span>
         </div>
       )}
 
       {error ? (
-        <div className="flex items-center gap-2 px-5 py-8 text-sm text-slate-500">
-          <AlertCircle size={18} className="text-red-500" /> {error}
+        <div className="flex items-center gap-2 px-5 py-8 text-sm text-slate-500 dark:text-slate-400">
+          <AlertCircle size={18} className="text-red-500 dark:text-red-400" /> {error}
           <button
             onClick={() => setReloadKey((k) => k + 1)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <Refresh size={13} /> Thử lại
           </button>
@@ -272,7 +280,7 @@ export default function PriceBoard({ onOpenStock }) {
       ) : loading && rows.length === 0 ? (
         <div className="px-5 py-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center gap-3 border-t border-slate-100 py-3 first:border-t-0">
+            <div key={i} className="flex items-center gap-3 border-t border-slate-100 py-3 first:border-t-0 dark:border-slate-800">
               <div className="ss-skel h-8 w-8 rounded-lg" />
               <div className="ss-skel h-4 w-24" />
               <div className="ss-skel ml-auto h-4 w-16" />
@@ -280,7 +288,7 @@ export default function PriceBoard({ onOpenStock }) {
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <div className="px-5 py-8 text-center text-sm text-slate-400">
+        <div className="px-5 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
           {editable ? (
             <>Chưa có mã nào. Bấm <b>Thêm mã</b> để theo dõi.</>
           ) : (
@@ -291,7 +299,7 @@ export default function PriceBoard({ onOpenStock }) {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse">
             <thead>
-              <tr className="text-right text-[11px] uppercase tracking-[0.04em] text-slate-400">
+              <tr className="text-right text-[11px] uppercase tracking-[0.04em] text-slate-400 dark:text-slate-500">
                 <th className="px-5 py-2.5 text-left font-semibold">Mã</th>
                 <th className="px-2.5 py-2.5 font-semibold" style={{ color: REF }}>TC</th>
                 <th className="px-2.5 py-2.5 font-semibold" style={{ color: CEIL }}>Trần</th>
@@ -307,7 +315,7 @@ export default function PriceBoard({ onOpenStock }) {
               {rows.map((r, i) => {
                 const pc = priceColor(r)
                 return (
-                  <tr key={r.code} className="group border-t border-slate-100 text-right">
+                  <tr key={r.code} className="group border-t border-slate-100 text-right dark:border-slate-800">
                     <td className="px-5 py-3 text-left">
                       <button
                         type="button"
@@ -317,14 +325,14 @@ export default function PriceBoard({ onOpenStock }) {
                         title={onOpenStock ? `Xem chi tiết ${r.code}` : undefined}
                       >
                         {ranked && (
-                          <span className="tnum w-4 flex-none text-center text-[13px] font-extrabold text-slate-300">
+                          <span className="tnum w-4 flex-none text-center text-[13px] font-extrabold text-slate-300 dark:text-slate-600">
                             {i + 1}
                           </span>
                         )}
                         <TickerLogo code={r.code} size={32} />
                         <div className="min-w-0 leading-tight">
-                          <div className="tnum text-sm font-bold text-slate-900">{r.code}</div>
-                          <div className="max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-slate-400">
+                          <div className="tnum text-sm font-bold text-slate-900 dark:text-slate-100">{r.code}</div>
+                          <div className="max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-slate-400 dark:text-slate-500">
                             {r.name || (r.floor ? r.floor : '')}
                           </div>
                         </div>
@@ -340,19 +348,26 @@ export default function PriceBoard({ onOpenStock }) {
                         className="tnum inline-block rounded-md px-2 py-[3px] text-[12.5px] font-bold"
                         style={{
                           color: pc,
-                          background: r.pctChange == null ? 'transparent' : r.pctChange > 0 ? '#DCFCE7' : r.pctChange < 0 ? '#FEF2F2' : '#FEF9C3',
+                          background:
+                            r.pctChange == null
+                              ? 'transparent'
+                              : r.pctChange > 0
+                                ? 'rgba(22,163,74,.14)'
+                                : r.pctChange < 0
+                                  ? 'rgba(220,38,38,.14)'
+                                  : 'rgba(202,138,4,.14)',
                         }}
                       >
                         {pctStr(r.pctChange)}
                       </span>
                     </td>
-                    <td className="tnum px-5 py-3 text-[13px] text-slate-500">{volShort(r.volume)}</td>
+                    <td className="tnum px-5 py-3 text-[13px] text-slate-500 dark:text-slate-400">{volShort(r.volume)}</td>
                     {editable && (
                       <td className="px-2 py-3">
                         <button
                           onClick={() => removeCode(r.code)}
                           title="Bỏ khỏi danh mục"
-                          className="rounded px-1 text-base leading-none text-slate-300 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
+                          className="rounded px-1 text-base leading-none text-slate-300 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100 dark:text-slate-600"
                         >
                           ×
                         </button>
