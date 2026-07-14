@@ -15,7 +15,9 @@ const floorStyle = (f) => {
 }
 
 // Combobox chọn mã: gõ để lọc trong toàn bộ danh sách, hoặc duyệt danh sách phổ biến.
-export default function TickerPicker({ value, onChange, universe = [], onEnter }) {
+// onSelect (tuỳ chọn): gọi ngay khi chọn 1 mã (click hoặc Enter khi đang bôi đen trong danh
+// sách) — dùng cho các ô "tra cứu" muốn nhảy thẳng đi ngay, khác với onChange (chỉ đổi text).
+export default function TickerPicker({ value, onChange, universe = [], onEnter, onSelect }) {
   const [open, setOpen] = useState(false)
   const [hi, setHi] = useState(0)
   const boxRef = useRef(null)
@@ -61,6 +63,7 @@ export default function TickerPicker({ value, onChange, universe = [], onEnter }
 
   const pick = (code) => {
     onChange(code)
+    onSelect?.(code)
     setOpen(false)
   }
 

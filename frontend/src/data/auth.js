@@ -64,3 +64,10 @@ export const register = (name, email, password) =>
   api('/auth/register', { method: 'POST', body: { name, email, password } })
 
 export const fetchMe = () => api('/auth/me', { auth: true })
+
+// Cập nhật tên hiển thị → trả { user }.
+export const updateProfile = (name) => api('/auth/me', { method: 'PATCH', auth: true, body: { name } })
+
+// Đổi mật khẩu (cần mật khẩu hiện tại) → trả { ok: true }.
+export const changePassword = (currentPassword, newPassword) =>
+  api('/auth/change-password', { method: 'POST', auth: true, body: { currentPassword, newPassword } })

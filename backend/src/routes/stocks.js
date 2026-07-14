@@ -4,6 +4,7 @@ import { getMarketOverview, getMarketNews } from '../market/marketOverview.js'
 import { getPriceBoard, VN30 } from '../market/priceBoard.js'
 import { getStockData } from '../market/stockData.js'
 import { getCandles, getIndexCandles } from '../market/candles.js'
+import { getMovers } from '../market/movers.js'
 import { topTickers } from '../chat/history.js'
 
 const router = Router()
@@ -133,6 +134,17 @@ router.get('/candles', async (req, res) => {
   } catch (err) {
     console.error('[stocks:candles]', err)
     res.status(500).json({ error: 'Không tải được dữ liệu biểu đồ.' })
+  }
+})
+
+// Xếp hạng bảng giá: tăng/giảm mạnh nhất + phổ biến nhất (giá trị khớp) trong rổ thanh khoản cao.
+router.get('/market/movers', async (req, res) => {
+  const limit = Math.min(20, Math.max(3, Number(req.query.limit) || 10))
+  try {
+    res.json(await getMovers(limit))
+  } catch (err) {
+    console.error('[stocks:movers]', err)
+    res.status(500).json({ error: 'Không tải được bảng xếp hạng.' })
   }
 })
 

@@ -11,19 +11,20 @@ import Guide from './screens/Guide.jsx'
 import Pricing from './screens/Pricing.jsx'
 import Checkout from './screens/Checkout.jsx'
 import StockDetail from './screens/StockDetail.jsx'
+import Settings from './screens/Settings.jsx'
 import { getToken, setToken, clearToken, fetchMe } from './data/auth.js'
 import { fetchAiStatus } from './data/ai.js'
 import { getBillingStatus } from './data/billing.js'
 import { resetAllRuns, patchRun } from './data/aiRunStore.js'
 
 // Màn cần đăng nhập: Dashboard + Phân tích cổ phiếu + Danh mục + Cộng Đồng + Hướng dẫn + Chi tiết mã + Thanh toán. Landing công khai.
-const PROTECTED = ['dashboard', 'ai', 'portfolio', 'community', 'guide', 'stock', 'checkout']
+const PROTECTED = ['dashboard', 'ai', 'portfolio', 'community', 'guide', 'settings', 'stock', 'checkout']
 
-const VALID_SCREENS = ['landing', 'dashboard', 'ai', 'portfolio', 'community', 'guide', 'stock', 'pricing', 'checkout']
+const VALID_SCREENS = ['landing', 'dashboard', 'ai', 'portfolio', 'community', 'guide', 'settings', 'stock', 'pricing', 'checkout']
 // Nhớ màn hình cuối để mở lại tab không văng về landing. KHÔNG nhớ các màn tạm
 // (auth: đang đăng nhập; checkout: đang thanh toán dở) — mở lại nên về app chính.
 const SCREEN_KEY = 'stocksense.screen'
-const REMEMBERED_SCREENS = ['dashboard', 'ai', 'portfolio', 'community', 'guide', 'pricing']
+const REMEMBERED_SCREENS = ['dashboard', 'ai', 'portfolio', 'community', 'guide', 'settings', 'pricing']
 
 export default function App() {
   const [screen, setScreen] = useState('landing')
@@ -36,6 +37,7 @@ export default function App() {
   const [checkout, setCheckout] = useState({ plan: 'pro', cycle: 'monthly' })
   const [authMode, setAuthMode] = useState('login') // 'login' | 'register' cho màn Auth
   const [selectedTicker, setSelectedTicker] = useState(null) // mã đang xem ở màn chi tiết
+  const [settingsTab, setSettingsTab] = useState('account') // mục con đang chọn trong Cài đặt
 
   // Khôi phục phiên từ token đã lưu, rồi áp deep-link: ?screen=dashboard
   // requestId chặn race khi boot() được gọi lại (nút "Thử lại") trong lúc lần gọi trước chưa xong.
@@ -169,6 +171,13 @@ export default function App() {
     setScreen('ai')
   }, [])
 
+  // Mở màn Cài đặt ở đúng mục con (Tài khoản/Liên hệ/Giao diện/Ngôn ngữ) — dùng cho menu
+  // xổ xuống trong Sidebar.
+  const goSettings = useCallback((tab = 'account') => {
+    setSettingsTab(tab)
+    setScreen('settings')
+  }, [])
+
   // Chặn vào màn cần đăng nhập khi chưa có phiên → chuyển sang màn đăng nhập.
   const guard = useCallback(
     (fn) =>
@@ -266,7 +275,9 @@ export default function App() {
     <div className="flex min-h-screen">
       <Sidebar
         screen={screen}
+        settingsTab={settingsTab}
         onNavigate={go}
+        onSelectSettingsTab={goSettings}
         onLogo={() => go('landing')}
         user={user}
         billing={billing}
@@ -307,6 +318,8 @@ export default function App() {
             )
           ) : screen === 'guide' ? (
             <Guide onNavigate={go} />
+          ) : screen === 'settings' ? (
+            <Settings user={user} onUserUpdate={setUser} onNavigate={go} tab={settingsTab} />
           ) : screen === 'checkout' ? (
             <Checkout
               plan={checkout.plan}

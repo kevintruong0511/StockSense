@@ -1,11 +1,44 @@
-import { Grid, Sparkle, Wallet, Users, BookOpen, LogOut } from './icons.jsx'
+import { useEffect, useState } from 'react'
+import {
+  Grid,
+  Sparkle,
+  Wallet,
+  Users,
+  BookOpen,
+  Settings,
+  ChevronDown,
+  User,
+  Mail,
+  Palette,
+  Globe,
+  LogOut,
+} from './icons.jsx'
 
-const NAV = [
-  { key: 'dashboard', label: 'Trang chủ', Icon: Grid },
-  { key: 'ai', label: 'Phân tích cổ phiếu', Icon: Sparkle },
-  { key: 'portfolio', label: 'Danh mục', Icon: Wallet },
-  { key: 'community', label: 'Cộng Đồng', Icon: Users },
-  { key: 'guide', label: 'Hướng dẫn', Icon: BookOpen },
+// Điều hướng gom theo nhóm chức năng: Đầu tư / Khám phá / Tài khoản.
+const NAV_GROUPS = [
+  {
+    label: 'Đầu tư',
+    items: [
+      { key: 'dashboard', label: 'Trang chủ', Icon: Grid },
+      { key: 'ai', label: 'Phân tích cổ phiếu', Icon: Sparkle },
+      { key: 'portfolio', label: 'Danh mục', Icon: Wallet },
+    ],
+  },
+  {
+    label: 'Khám phá',
+    items: [
+      { key: 'community', label: 'Cộng Đồng', Icon: Users },
+      { key: 'guide', label: 'Hướng dẫn', Icon: BookOpen },
+    ],
+  },
+]
+
+// Mục con của "Cài đặt" — khớp các panel trong screens/Settings.jsx.
+const SETTINGS_TABS = [
+  { key: 'account', label: 'Tài khoản', Icon: User },
+  { key: 'contact', label: 'Liên hệ', Icon: Mail },
+  { key: 'appearance', label: 'Giao diện', Icon: Palette },
+  { key: 'language', label: 'Ngôn ngữ', Icon: Globe },
 ]
 
 // Lấy 2 ký tự viết tắt từ tên để làm avatar.
@@ -18,7 +51,16 @@ function initials(name = '') {
 
 const PLAN_LABEL = { free: 'Free', pro: 'Pro', ultra: 'Ultra' }
 
-export default function Sidebar({ screen, onNavigate, onLogo, user, billing, onLogout }) {
+export default function Sidebar({
+  screen,
+  settingsTab,
+  onNavigate,
+  onSelectSettingsTab,
+  onLogo,
+  user,
+  billing,
+  onLogout,
+}) {
   const plan = billing?.plan || user?.plan || 'free'
   const usage = billing?.usage
   const isUltra = plan === 'ultra'
@@ -27,8 +69,23 @@ export default function Sidebar({ screen, onNavigate, onLogo, user, billing, onL
       ? 'Không giới hạn lượt AI'
       : `Còn ${usage.remaining}/${usage.limit} lượt AI hôm nay`
     : ''
+
+  // "Cài đặt" xổ xuống danh sách mục con — tự mở khi đang ở màn Cài đặt (vd deep-link).
+  const [settingsOpen, setSettingsOpen] = useState(screen === 'settings')
+  useEffect(() => {
+    if (screen === 'settings') setSettingsOpen(true)
+  }, [screen])
+
+  const toggleSettings = () => {
+    if (screen === 'settings') setSettingsOpen((v) => !v)
+    else {
+      setSettingsOpen(true)
+      onNavigate('settings')
+    }
+  }
+
   return (
-    <aside className="sticky top-0 flex h-screen w-[236px] flex-none flex-col bg-slate-900 text-slate-300">
+    <aside className="sticky top-0 flex h-screen w-[236px] flex-none flex-col overflow-y-auto bg-slate-900 text-slate-300">
       {/* logo */}
       <button onClick={onLogo} className="flex items-center gap-2.5 px-5 pb-[22px] pt-5 text-left">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-[15px] font-extrabold text-white">
@@ -39,24 +96,77 @@ export default function Sidebar({ screen, onNavigate, onLogo, user, billing, onL
         </span>
       </button>
 
-      {/* nav */}
-      <nav className="flex flex-col gap-[3px] px-3 py-1">
-        {NAV.map(({ key, label, Icon }) => {
-          const active = screen === key
-          return (
+      {/* nav — gom nhóm theo chức năng */}
+      <nav className="flex flex-col gap-1 px-3 py-1">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label} className="mb-1.5">
+            <div className="px-3 pb-1 pt-2 text-[10.5px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              {group.label}
+            </div>
+            <div className="flex flex-col gap-[3px]">
+              {group.items.map(({ key, label, Icon }) => {
+                const active = screen === key
+                return (
+                  <button
+                    key={key}
+                    onClick={() => onNavigate(key)}
+                    className={
+                      'flex items-center gap-[11px] rounded-[9px] px-3 py-2.5 text-left text-sm font-semibold transition-colors ' +
+                      (active ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white')
+                    }
+                  >
+                    <Icon size={18} />
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* Tài khoản: "Cài đặt" xổ xuống danh sách mục con */}
+        <div className="mb-1.5">
+          <div className="px-3 pb-1 pt-2 text-[10.5px] font-bold uppercase tracking-[0.08em] text-slate-500">
+            Tài khoản
+          </div>
+          <div className="flex flex-col gap-[3px]">
             <button
-              key={key}
-              onClick={() => onNavigate(key)}
+              onClick={toggleSettings}
               className={
                 'flex items-center gap-[11px] rounded-[9px] px-3 py-2.5 text-left text-sm font-semibold transition-colors ' +
-                (active ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white')
+                (screen === 'settings' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white')
               }
             >
-              <Icon size={18} />
-              {label}
+              <Settings size={18} />
+              <span className="flex-1">Cài đặt</span>
+              <ChevronDown
+                size={15}
+                className={'transition-transform ' + (settingsOpen ? 'rotate-180' : '')}
+              />
             </button>
-          )
-        })}
+
+            {settingsOpen && (
+              <div className="ml-[11px] flex flex-col gap-[2px] border-l border-white/10 pl-3">
+                {SETTINGS_TABS.map(({ key, label, Icon }) => {
+                  const active = screen === 'settings' && settingsTab === key
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => onSelectSettingsTab(key)}
+                      className={
+                        'flex items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-left text-[13px] font-semibold transition-colors ' +
+                        (active ? 'bg-blue-600/20 text-blue-300' : 'text-slate-400 hover:bg-white/5 hover:text-white')
+                      }
+                    >
+                      <Icon size={15} />
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </nav>
 
       {/* footer: thẻ gói + user */}

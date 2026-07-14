@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Plus, Refresh, AlertCircle } from './icons.jsx'
+import { Plus, Refresh, AlertCircle, ArrowRight } from './icons.jsx'
 import TickerPicker from './TickerPicker.jsx'
 import TickerLogo from './TickerLogo.jsx'
-import { fetchPriceBoard, fetchPriceBoardGroup } from '../data/market.js'
+import { fetchPriceBoard, fetchPriceBoardGroup, fetchMovers } from '../data/market.js'
 import { fetchTickers } from '../data/ai.js'
 
 // Màu bảng điện chuẩn VN: trần = tím, sàn = lơ (cyan), tham chiếu = vàng, tăng = lá, giảm = đỏ.
@@ -12,9 +12,16 @@ const REF = '#CA8A04'
 const UP = '#16A34A'
 const DOWN = '#DC2626'
 
-const WATCH_DEFAULT = ['FPT', 'HPG', 'VNM', 'VCB', 'MWG', 'CMG']
-const WATCH_KEY = 'ss.watchlist'
-const MAX_WATCH = 30
+// Danh mục mặc định = rổ VN30 (nhiều mã, thanh khoản cao) để bảng giá đầy đặn ngay từ đầu.
+// Người dùng vẫn thêm/bớt tuỳ ý (lưu ở localStorage).
+const WATCH_DEFAULT = [
+  'ACB', 'BCM', 'BID', 'BVH', 'CTG', 'FPT', 'GAS', 'GVR', 'HDB', 'HPG',
+  'LPB', 'MBB', 'MSN', 'MWG', 'PLX', 'SAB', 'SHB', 'SSB', 'SSI', 'STB',
+  'TCB', 'TPB', 'VCB', 'VHM', 'VIB', 'VIC', 'VJC', 'VNM', 'VPB', 'VRE',
+]
+// v2: đổi khoá để áp danh mục mặc định mới (VN30) cho cả người đã lưu bản 6 mã cũ.
+const WATCH_KEY = 'ss.watchlist.v2'
+const MAX_WATCH = 50
 
 // Đọc/ghi danh mục theo dõi ở localStorage (DB hoá sau).
 // Export cho thẻ "AI nhận định thị trường" gửi kèm danh mục khi phân tích.
@@ -60,10 +67,13 @@ function volShort(v) {
   return v.toLocaleString('en-US')
 }
 
-// Bảng điện: tab Danh mục (sửa được) / VN30, giá thật cập nhật trong ngày (VNDIRECT, poll ~20s).
-// onOpenStock(code): mở màn chi tiết mã khi click vào mã.
+// Tab dạng xếp hạng (đánh số thứ tự ở đầu).
+const RANK_TABS = new Set(['gainers', 'losers'])
+
+// Bảng điện nhiều mục: VN30 / Phổ biến nhất / Tăng mạnh nhất / Giảm mạnh nhất / Danh mục (sửa được).
+// Giá thật cập nhật trong ngày (VNDIRECT, poll ~20s). onOpenStock(code): mở chi tiết mã khi click.
 export default function PriceBoard({ onOpenStock }) {
-  const [tab, setTab] = useState('watch') // 'watch' | 'vn30'
+  const [tab, setTab] = useState('active') // 'active' | 'vn30' | 'gainers' | 'losers' | 'watch'
   const [watch, setWatch] = useState(loadWatch)
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
@@ -74,6 +84,7 @@ export default function PriceBoard({ onOpenStock }) {
   const [addValue, setAddValue] = useState('')
   const [universe, setUniverse] = useState([])
   const [reloadKey, setReloadKey] = useState(0) // tăng để nạp lại khi lỗi thoáng qua (nút "Thử lại")
+  const [lookup, setLookup] = useState('') // ô "Tra cứu mã" — độc lập với danh mục theo dõi
 
   const watchKey = watch.join(',')
 
@@ -88,7 +99,15 @@ export default function PriceBoard({ onOpenStock }) {
     const load = async (initial) => {
       if (initial) setLoading(true)
       try {
-        const r = tab === 'vn30' ? await fetchPriceBoardGroup('vn30') : await fetchPriceBoard(watch)
+        let r
+        if (tab === 'vn30') r = await fetchPriceBoardGroup('vn30')
+        else if (tab === 'watch') r = await fetchPriceBoard(watch)
+        else {
+          // active (phổ biến) / gainers / losers — cùng lấy từ 1 endpoint xếp hạng.
+          const m = await fetchMovers(10)
+          const list = tab === 'gainers' ? m.gainers : tab === 'losers' ? m.losers : m.active
+          r = { rows: list || [], asOf: m.asOf, asOfTime: m.asOfTime, source: m.source }
+        }
         if (cancelled) return
         if (r.source === 'unavailable') setError('Không tải được bảng giá.')
         else {
@@ -108,6 +127,14 @@ export default function PriceBoard({ onOpenStock }) {
     if (open) timer = setInterval(() => load(false), 20000)
     return () => { cancelled = true; if (timer) clearInterval(timer) }
   }, [tab, watchKey, reloadKey])
+
+  // Tra cứu mã: mở thẳng màn chi tiết (biểu đồ + số liệu thật), không đụng danh mục theo dõi.
+  const openLookup = (code) => {
+    const c = String(code ?? lookup).trim().toUpperCase()
+    if (!c || !onOpenStock) return
+    onOpenStock(c)
+    setLookup('')
+  }
 
   const addCode = (code) => {
     const c = String(code || '').trim().toUpperCase()
@@ -130,6 +157,7 @@ export default function PriceBoard({ onOpenStock }) {
   }
 
   const editable = tab === 'watch'
+  const ranked = RANK_TABS.has(tab) // tăng/giảm mạnh → đánh số thứ tự
   const tabBtn = (key, label, count) => (
     <button
       onClick={() => setTab(key)}
@@ -149,9 +177,12 @@ export default function PriceBoard({ onOpenStock }) {
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3.5">
         <h2 className="m-0 mr-1 text-base font-bold">Bảng giá</h2>
-        <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
-          {tabBtn('watch', 'Danh mục', watch.length)}
+        <div className="flex flex-wrap items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+          {tabBtn('active', 'Phổ biến', 10)}
           {tabBtn('vn30', 'VN30', 30)}
+          {tabBtn('gainers', 'Tăng mạnh', 10)}
+          {tabBtn('losers', 'Giảm mạnh', 10)}
+          {tabBtn('watch', 'Danh mục', watch.length)}
         </div>
         <div className="ml-auto flex items-center gap-2.5 text-[11.5px] text-slate-400">
           {live ? (
@@ -168,6 +199,28 @@ export default function PriceBoard({ onOpenStock }) {
           {asOf && <span className="tnum hidden sm:inline">Cập nhật {asOf}</span>}
         </div>
       </div>
+
+      {/* tra cứu mã: gõ/chọn 1 mã bất kỳ → mở thẳng chi tiết + biểu đồ, không phụ thuộc tab đang xem */}
+      {onOpenStock && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
+          <span className="text-[13px] font-semibold text-slate-500">Tra cứu mã:</span>
+          <TickerPicker
+            value={lookup}
+            onChange={setLookup}
+            universe={universe}
+            onEnter={() => openLookup()}
+            onSelect={(code) => openLookup(code)}
+          />
+          <button
+            onClick={() => openLookup()}
+            disabled={!lookup.trim()}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Xem chi tiết
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      )}
 
       {/* thanh sửa danh mục */}
       {editable && (
@@ -228,7 +281,11 @@ export default function PriceBoard({ onOpenStock }) {
         </div>
       ) : rows.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm text-slate-400">
-          Chưa có mã nào. Bấm <b>Thêm mã</b> để theo dõi.
+          {editable ? (
+            <>Chưa có mã nào. Bấm <b>Thêm mã</b> để theo dõi.</>
+          ) : (
+            'Không có dữ liệu.'
+          )}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -247,7 +304,7 @@ export default function PriceBoard({ onOpenStock }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => {
+              {rows.map((r, i) => {
                 const pc = priceColor(r)
                 return (
                   <tr key={r.code} className="group border-t border-slate-100 text-right">
@@ -259,6 +316,11 @@ export default function PriceBoard({ onOpenStock }) {
                         className="flex items-center gap-2.5 rounded-lg text-left transition-opacity enabled:hover:opacity-70 disabled:cursor-default"
                         title={onOpenStock ? `Xem chi tiết ${r.code}` : undefined}
                       >
+                        {ranked && (
+                          <span className="tnum w-4 flex-none text-center text-[13px] font-extrabold text-slate-300">
+                            {i + 1}
+                          </span>
+                        )}
                         <TickerLogo code={r.code} size={32} />
                         <div className="min-w-0 leading-tight">
                           <div className="tnum text-sm font-bold text-slate-900">{r.code}</div>

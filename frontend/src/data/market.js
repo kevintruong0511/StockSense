@@ -25,6 +25,9 @@ export const fetchPriceBoard = (codes) =>
 export const fetchPriceBoardGroup = (group = 'vn30') =>
   authedGet(`/stocks/market/board?group=${encodeURIComponent(group)}`)
 
+// Xếp hạng: { gainers, losers, active, asOf }. active = phổ biến nhất (theo giá trị khớp).
+export const fetchMovers = (limit = 10) => authedGet(`/stocks/market/movers?limit=${limit}`)
+
 // Mã được phân tích nhiều nhất (đếm phiên chat thật) trong N ngày qua.
 export const fetchTopAnalyzed = (days = 7, limit = 5) =>
   authedGet(`/stocks/market/top-analyzed?days=${days}&limit=${limit}`)
