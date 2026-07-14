@@ -593,7 +593,7 @@ export default function AiAnalysis({ aiEnabled, billing, onRefreshBilling, onNav
             <span className="text-xs font-semibold text-slate-500">
               Mã cổ phiếu
               {universe.length > 0 && (
-                <span className="font-normal text-slate-400"> · chọn/gõ trong {universe.length.toLocaleString('vi-VN')} mã niêm yết</span>
+                <span className="font-normal text-slate-400"> · chọn/gõ trong {universe.length.toLocaleString('en-US')} mã niêm yết</span>
               )}
             </span>
             <TickerPicker value={ticker} onChange={setTicker} universe={universe} onEnter={startAnalyze} />

@@ -66,7 +66,7 @@ export const compareVerdict =
 
 // metric definitions for the compare table (best-value highlighting)
 export const compareMetricDefs = [
-  { label: 'Giá hiện tại', get: (s) => s.price.toLocaleString('vi-VN') },
+  { label: 'Giá hiện tại', get: (s) => s.price.toLocaleString('en-US') },
   { label: 'Vốn hóa', get: (s) => s.cap },
   { label: 'P/E', get: (s) => s.pe, best: 'min' },
   { label: 'P/B', get: (s) => s.pb, best: 'min' },

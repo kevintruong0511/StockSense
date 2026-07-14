@@ -3,8 +3,8 @@ import { Bell } from './icons.jsx'
 import { fetchMarketOverview } from '../data/market.js'
 
 const idxFmt = (n) =>
-  n == null ? '—' : n.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const pctFmt = (p) => (p == null ? '' : (p >= 0 ? '+' : '') + p.toFixed(2).replace('.', ',') + '%')
+  n == null ? '—' : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const pctFmt = (p) => (p == null ? '' : (p >= 0 ? '+' : '') + p.toFixed(2) + '%')
 
 // Thanh trên cùng của app: VN-Index THẬT (VNDIRECT) + chuông thông báo.
 // Tự làm mới mỗi 60s để khớp diễn biến trong ngày.

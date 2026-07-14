@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Sparkle, Check, ArrowRight, InfoCircle, AlertCircle } from '../components/icons.jsx'
 import { createOrder, getOrder, mockPay } from '../data/billing.js'
 
-// Định dạng số tiền kiểu Việt Nam.
-const fmt = (n) => Number(n || 0).toLocaleString('vi-VN')
+// Định dạng số tiền chuẩn quốc tế (en-US).
+const fmt = (n) => Number(n || 0).toLocaleString('en-US')
 const PLAN_NAME = { pro: 'Pro', ultra: 'Ultra' }
 
 // Đếm ngược mm:ss từ số ms còn lại.

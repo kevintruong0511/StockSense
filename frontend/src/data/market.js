@@ -36,3 +36,7 @@ export const fetchStockDetail = (code) =>
 // Nến OHLCV thật cho biểu đồ. tf: '15' | '60' | 'D' | 'W' | 'M'.
 export const fetchCandles = (code, tf = 'D') =>
   authedGet(`/stocks/candles?code=${encodeURIComponent(String(code || '').trim().toUpperCase())}&tf=${encodeURIComponent(tf)}`)
+
+// Nến VN-Index cho biểu đồ tổng quan trang chủ. tf: 'D' | 'W' | 'M'.
+export const fetchIndexCandles = (tf = 'D') =>
+  authedGet(`/stocks/market/index-candles?tf=${encodeURIComponent(tf)}`)

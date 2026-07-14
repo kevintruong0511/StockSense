@@ -34,6 +34,7 @@ export async function vndPrice(code) {
   if (!q) return null
   return {
     closeVnd: q.close != null ? q.close * 1000 : null,
+    changeVnd: q.change != null ? q.change * 1000 : null,
     pctChange: q.pctChange ?? null,
     openVnd: q.open != null ? q.open * 1000 : null,
     highVnd: q.high != null ? q.high * 1000 : null,

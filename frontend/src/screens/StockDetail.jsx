@@ -1,32 +1,37 @@
 import { useEffect, useState } from 'react'
 import { Sparkle, AlertCircle, Refresh, ArrowRight } from '../components/icons.jsx'
 import PriceChart from '../components/PriceChart.jsx'
-import { tickerBadge } from '../data/stocks.js'
+import TickerLogo from '../components/TickerLogo.jsx'
 import { fetchStockDetail, fetchCandles } from '../data/market.js'
 
 const UP = '#16A34A'
 const DOWN = '#DC2626'
 
-// Khung nến cho widget TradingView (giá trị interval TradingView).
+// Preset khoảng thời gian kiểu TradingView (khớp nhãn với cửa sổ hiển thị).
 const TIMEFRAMES = [
-  ['15', '15 phút'],
-  ['60', '1 giờ'],
-  ['D', 'Ngày'],
-  ['W', 'Tuần'],
-  ['M', 'Tháng'],
+  ['1D', '1 Ngày'],
+  ['5D', '5 Ngày'],
+  ['1M', '1 Tháng'],
+  ['3M', '3 Tháng'],
+  ['6M', '6 Tháng'],
+  ['YTD', 'YTD'],
+  ['1Y', '1 Năm'],
+  ['5Y', '5 Năm'],
+  ['ALL', 'Tất cả'],
 ]
 
-// ── Định dạng số kiểu Việt ───────────────────────────────────────────────────
-const vnd = (n) => (n == null ? '—' : Math.round(n).toLocaleString('vi-VN'))
-const num = (n, d = 2) => (n == null ? '—' : Number(n).toFixed(d).replace('.', ','))
-const pctRaw = (p) => (p == null ? '—' : (p >= 0 ? '+' : '') + Number(p).toFixed(2).replace('.', ',') + '%') // p là % thật
-const pctFrac = (x) => (x == null ? '—' : (x >= 0 ? '+' : '') + (x * 100).toFixed(1).replace('.', ',') + '%') // x là phân số
-const billions = (n) => (n == null ? '—' : (n / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' tỷ')
+// ── Định dạng số chuẩn quốc tế (en-US: nghìn = phẩy, thập phân = chấm) ─────────
+const vnd = (n) => (n == null ? '—' : Math.round(n).toLocaleString('en-US'))
+const num = (n, d = 2) => (n == null ? '—' : Number(n).toFixed(d))
+const pctRaw = (p) => (p == null ? '—' : (p >= 0 ? '+' : '') + Number(p).toFixed(2) + '%') // p là % thật
+const chgStr = (n) => (n == null ? '—' : (n >= 0 ? '+' : '') + Math.round(n).toLocaleString('en-US')) // ±điểm/đồng
+const pctFrac = (x) => (x == null ? '—' : (x >= 0 ? '+' : '') + (x * 100).toFixed(1) + '%') // x là phân số
+const billions = (n) => (n == null ? '—' : (n / 1e9).toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' tỷ')
 const volShort = (v) => {
   if (v == null) return '—'
-  if (v >= 1e6) return (v / 1e6).toFixed(2).replace('.', ',') + ' tr'
-  if (v >= 1e3) return Math.round(v / 1e3).toLocaleString('vi-VN') + ' K'
-  return v.toLocaleString('vi-VN')
+  if (v >= 1e6) return (v / 1e6).toFixed(2) + ' tr'
+  if (v >= 1e3) return Math.round(v / 1e3).toLocaleString('en-US') + ' K'
+  return v.toLocaleString('en-US')
 }
 const trendColor = (x) => (x == null ? '#64748B' : x >= 0 ? UP : DOWN)
 
@@ -52,14 +57,13 @@ function Section({ title, children }) {
 }
 
 export default function StockDetail({ code, onBack, onAnalyze }) {
-  const [tf, setTf] = useState('D')
+  const [tf, setTf] = useState('6M')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [candles, setCandles] = useState(null)
   const [chartLoading, setChartLoading] = useState(true)
-  const badge = tickerBadge(code)
 
   // Nến cho biểu đồ — nạp lại khi đổi mã hoặc đổi khung thời gian.
   useEffect(() => {
@@ -126,12 +130,7 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
 
       {/* header mã */}
       <div className="mb-4 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4">
-        <div
-          className="flex h-12 w-12 flex-none items-center justify-center rounded-xl text-[15px] font-extrabold"
-          style={{ background: badge.bg, color: badge.fg }}
-        >
-          {code.slice(0, 3)}
-        </div>
+        <TickerLogo code={code} size={48} rounded="rounded-xl" />
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="tnum text-2xl font-extrabold tracking-[-0.02em]">{code}</span>
@@ -151,8 +150,8 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
               {vnd(p.close)}
             </div>
             <div className="tnum text-[13px] font-bold" style={{ color: priceColor }}>
-              {pctRaw(p.pctChange)}
-              {p.date ? <span className="ml-2 font-medium text-slate-400">phiên {p.date}</span> : null}
+              {chgStr(p.change)} ({pctRaw(p.pctChange)})
+              {p.date ? <span className="ml-2 font-medium text-slate-400">· phiên {p.date}</span> : null}
             </div>
           </div>
         )}
@@ -170,9 +169,9 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
         </div>
       ) : (
         <>
-          {/* biểu đồ TradingView + chọn khung nến */}
+          {/* biểu đồ giá thật + chọn khoảng thời gian */}
           <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <div className="flex items-center gap-1 border-b border-slate-100 px-4 py-2.5">
+            <div className="flex flex-wrap items-center gap-1 border-b border-slate-100 px-4 py-2.5">
               <span className="mr-1 text-[12.5px] font-semibold text-slate-500">Khung:</span>
               {TIMEFRAMES.map(([val, label]) => (
                 <button
@@ -211,7 +210,7 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
               {/* giá & thanh khoản */}
               <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
                 <Stat label="Giá đóng cửa" value={vnd(p?.close) + ' đ'} color={priceColor} />
-                <Stat label="+/- phiên" value={pctRaw(p?.pctChange)} color={priceColor} />
+                <Stat label="+/- phiên" value={`${chgStr(p?.change)} (${pctRaw(p?.pctChange)})`} color={priceColor} />
                 <Stat label="Mở cửa" value={vnd(p?.open)} />
                 <Stat label="Cao / Thấp" value={vnd(p?.high) + ' / ' + vnd(p?.low)} />
                 <Stat label="Khối lượng" value={volShort(p?.volume) + ' cp'} />
@@ -273,7 +272,7 @@ export default function StockDetail({ code, onBack, onAnalyze }) {
                   <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1.5 text-[13px] text-slate-500">
                     {data.profile.floor && <span>Sàn: <b className="text-slate-700">{data.profile.floor}</b></span>}
                     {data.profile.foundDate && <span>Thành lập: <b className="text-slate-700">{data.profile.foundDate}</b></span>}
-                    {data.profile.employees && <span>Nhân sự: <b className="text-slate-700">{Number(data.profile.employees).toLocaleString('vi-VN')}</b></span>}
+                    {data.profile.employees && <span>Nhân sự: <b className="text-slate-700">{Number(data.profile.employees).toLocaleString('en-US')}</b></span>}
                   </div>
                   {data.profile.summary && (
                     <p className="m-0 text-[13.5px] leading-relaxed text-slate-600">{data.profile.summary}</p>

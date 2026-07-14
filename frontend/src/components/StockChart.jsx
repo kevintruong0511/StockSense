@@ -9,7 +9,7 @@ const PLOT_H = 232
 const VOL_TOP = PAD_T + PLOT_H + 16
 const VOL_H = 44
 
-const fmt = (x) => Math.round(x).toLocaleString('vi-VN')
+const fmt = (x) => Math.round(x).toLocaleString('en-US')
 
 export default function StockChart({ candles = [], vols = [] }) {
   const ref = useRef(null)

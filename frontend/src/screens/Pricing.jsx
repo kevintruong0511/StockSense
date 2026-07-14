@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Sparkle, Check, ArrowRight, InfoCircle, Search, BarChart3 } from '../components/icons.jsx'
 import { redeemCode } from '../data/billing.js'
 
-// Định dạng số tiền kiểu Việt Nam (ngăn cách nghìn bằng dấu chấm).
-const fmt = (n) => n.toLocaleString('vi-VN')
+// Định dạng số tiền chuẩn quốc tế (ngăn cách nghìn bằng dấu phẩy).
+const fmt = (n) => n.toLocaleString('en-US')
 
 // 3 gói: Free / Pro (99k) / Ultra (299k). Giá trả năm giảm 20% (giá/tháng khi trả năm).
 // Triết lý sản phẩm: tập trung chiều sâu phân tích định tính, KHÔNG có tín hiệu mua/bán.

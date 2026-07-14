@@ -90,11 +90,11 @@ export function tickerBadge(code) {
 }
 
 // ---------- formatting helpers ----------
-export const formatVND = (n) => n.toLocaleString('vi-VN')
+export const formatVND = (n) => n.toLocaleString('en-US')
 export const upDown = (p) => (p >= 0 ? '#16A34A' : '#DC2626')
-export const pctStr = (p) => (p >= 0 ? '+' : '') + p.toFixed(2).replace('.', ',') + '%'
+export const pctStr = (p) => (p >= 0 ? '+' : '') + p.toFixed(2) + '%'
 export const chgStr = (c) => (c >= 0 ? '+' : '') + formatVND(c)
-export const decimal = (n) => n.toFixed(1).replace('.', ',')
+export const decimal = (n) => n.toFixed(1)
 
 // ---------- deterministic candle generation per ticker ----------
 export function candles(ticker) {

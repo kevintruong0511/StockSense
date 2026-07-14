@@ -1,16 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Clock, LineChart, AlertCircle } from '../components/icons.jsx'
-import { tickerBadge } from '../data/stocks.js'
-import { fetchMarketOverview, fetchMarketNews, fetchTopAnalyzed } from '../data/market.js'
+import { fetchMarketNews, fetchTopAnalyzed } from '../data/market.js'
 import PriceBoard from '../components/PriceBoard.jsx'
 import MarketAiCard from '../components/MarketAiCard.jsx'
+import MarketOverviewCard from '../components/MarketOverviewCard.jsx'
+import TickerLogo from '../components/TickerLogo.jsx'
 
 const UP = '#16A34A'
 const DOWN = '#DC2626'
-const BLUE = '#2563EB'
-
-// Màu theo chiều VN-Index.
-const vniColor = (pct) => (pct >= 0 ? UP : DOWN)
 
 // Giờ hiện tại theo múi giờ Việt Nam (0–23). Dùng formatToParts + en-GB (24 giờ)
 // để KHÔNG phụ thuộc cách trình duyệt render chuỗi 'hour12: false' — vài trình duyệt
@@ -37,58 +34,9 @@ function greeting() {
 }
 
 // % thay đổi giá (số thật từ bảng giá) → chuỗi hiển thị + màu.
-const pctFmt = (p) => (p == null ? '—' : (p >= 0 ? '+' : '') + p.toFixed(2).replace('.', ',') + '%')
-
-// Định dạng chỉ số VN-Index.
-const idxFmt = (n) =>
-  n == null ? '—' : n.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-
-// Tính stat cards từ dữ liệu thị trường thật.
-function buildDashStats(vni, breadth) {
-  const pct = vni?.pct
-  const deltaColor = pct != null ? vniColor(pct) : BLUE
-  const deltaLabel = pct != null
-    ? (pct >= 0 ? '+' : '') + pct.toFixed(2).replace('.', ',') + '% hôm nay'
-    : 'đang cập nhật'
-  return [
-    {
-      label: 'VN-Index',
-      value: idxFmt(vni?.index),
-      delta: deltaLabel,
-      color: deltaColor,
-    },
-    {
-      label: 'Mã tăng',
-      value: breadth?.gainers != null ? String(breadth.gainers) : '…',
-      delta:
-        breadth?.gainers != null
-          ? `trên ${breadth.gainers + breadth.losers + breadth.unchanged} mã rổ VN30`
-          : 'đang cập nhật',
-      color: UP,
-    },
-    {
-      label: 'Mã giảm',
-      value: breadth?.losers != null ? String(breadth.losers) : '…',
-      delta:
-        breadth?.gainers != null
-          ? `${breadth.gainers} tăng · ${breadth.unchanged} đứng giá`
-          : 'đang cập nhật',
-      color: DOWN,
-    },
-    {
-      label: 'Khối lượng',
-      value: vni?.vol != null ? (vni.vol / 1e6).toFixed(1).replace('.', ',') + 'M' : '…',
-      delta: 'khớp lệnh phiên hôm nay',
-      color: BLUE,
-    },
-  ]
-}
+const pctFmt = (p) => (p == null ? '—' : (p >= 0 ? '+' : '') + p.toFixed(2) + '%')
 
 export default function Dashboard({ user, newsState: newsStateProp, onRetryNews, billing, onRefreshBilling, onNavigate, onOpenStock }) {
-  // Dữ liệu thị trường thật.
-  const [dashStats, setDashStats] = useState(null)
-  const [dashLoading, setDashLoading] = useState(true)
-  const [dashError, setDashError] = useState(null)
   const [newsData, setNewsData] = useState(null)
   const [newsLoading, setNewsLoading] = useState(true)
   const [newsError, setNewsError] = useState(null)
@@ -101,21 +49,6 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
   const effectiveNewsLoading = newsStateProp === 'loading' || (newsLoading && newsData === null)
   const effectiveNewsError = newsStateProp === 'error' || newsError
   const effectiveNewsReady = newsData !== null && newsStateProp !== 'error' && newsStateProp !== 'loading'
-
-  useEffect(() => {
-    setDashLoading(true)
-    setDashError(null)
-    fetchMarketOverview()
-      .then((r) => {
-        if (r.vni?.source === 'unavailable' && r.breadth?.source === 'unavailable') {
-          setDashError('Không tải được dữ liệu thị trường.')
-        } else {
-          setDashStats(buildDashStats(r.vni, r.breadth))
-        }
-      })
-      .catch((e) => setDashError(e.message))
-      .finally(() => setDashLoading(false))
-  }, [])
 
   useEffect(() => {
     setNewsLoading(true)
@@ -157,34 +90,10 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
         </div>
       </div>
 
-      {/* stat cards */}
-      <div className="mb-[22px] grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-        {dashLoading && !dashStats ? (
-          [1, 2, 3, 4].map((i) => (
-            <div key={i} className="rounded-[14px] border border-slate-200 bg-white px-5 py-[18px]">
-              <div className="ss-skel mb-2 h-3 w-1/3" />
-              <div className="ss-skel mb-1 h-7 w-2/3" />
-              <div className="ss-skel h-3 w-1/2" />
-            </div>
-          ))
-        ) : dashError ? (
-          <div className="col-span-4 rounded-[14px] border border-slate-200 bg-white px-5 py-[18px] text-sm text-slate-500">
-            {dashError}
-          </div>
-        ) : (
-          dashStats.map((s) => (
-            <div key={s.label} className="rounded-[14px] border border-slate-200 bg-white px-5 py-[18px]">
-              <div className="mb-2 text-[12.5px] font-semibold text-slate-500">{s.label}</div>
-              <div className="tnum mb-1 text-2xl font-extrabold tracking-[-0.02em]">{s.value}</div>
-              <div className="tnum text-[13px] font-semibold" style={{ color: s.color }}>
-                {s.delta}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
       <div className="grid gap-5">
+        {/* tổng quan thị trường — VN-Index (chỉ số + độ rộng) + biểu đồ nến thật */}
+        <MarketOverviewCard />
+
         {/* AI nhận định toàn cảnh thị trường: phiên + biến động + vĩ mô, kèm nguồn */}
         <MarketAiCard billing={billing} onRefreshBilling={onRefreshBilling} onNavigate={onNavigate} />
 
@@ -274,7 +183,6 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
                 </p>
               ) : (
                 topItems.map((t, i) => {
-                  const b = tickerBadge(t.code)
                   const color = t.pctChange == null ? '#94A3B8' : t.pctChange >= 0 ? UP : DOWN
                   return (
                     <button
@@ -285,16 +193,11 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
                       <span className="tnum w-5 text-center text-[13px] font-extrabold text-slate-300">
                         {i + 1}
                       </span>
-                      <div
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold"
-                        style={{ background: b.bg, color: b.fg }}
-                      >
-                        {t.code.slice(0, 3)}
-                      </div>
+                      <TickerLogo code={t.code} size={32} />
                       <div className="min-w-0 flex-1 leading-tight">
                         <div className="tnum text-[13.5px] font-bold">{t.code}</div>
                         <div className="text-[11.5px] text-slate-400">
-                          {t.count.toLocaleString('vi-VN')} lượt phân tích
+                          {t.count.toLocaleString('en-US')} lượt phân tích
                         </div>
                       </div>
                       <span className="tnum text-[12.5px] font-bold" style={{ color }}>

@@ -20,13 +20,13 @@ import { upDown } from '../data/stocks.js'
 const AI_KEY = 'portfolio'
 const AI_INITIAL = { analyzing: false, text: '', sources: [], status: null, error: '', quotaHit: false, done: false }
 
-// Định dạng số kiểu Việt (nghìn = dấu chấm, thập phân = dấu phẩy).
-const vnd = (n) => (n == null ? '—' : Math.round(n).toLocaleString('vi-VN'))
-const pct = (p) => (p == null ? '—' : (p >= 0 ? '+' : '') + p.toFixed(2).replace('.', ',') + '%')
+// Định dạng số HIỂN THỊ theo chuẩn quốc tế (en-US: nghìn = phẩy, thập phân = chấm).
+const vnd = (n) => (n == null ? '—' : Math.round(n).toLocaleString('en-US'))
+const pct = (p) => (p == null ? '—' : (p >= 0 ? '+' : '') + p.toFixed(2) + '%')
 const todayVN = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
 
 // Số tiền lãi/lỗ có dấu (đồng, làm tròn — không hiển thị lẻ cho gọn).
-const signed = (n) => (n == null ? '—' : (n >= 0 ? '+' : '') + Math.round(n).toLocaleString('vi-VN'))
+const signed = (n) => (n == null ? '—' : (n >= 0 ? '+' : '') + Math.round(n).toLocaleString('en-US'))
 
 // Chỉ cho gõ chữ số + phân cách kiểu Việt ('.' nghìn, ',' thập phân) vào ô số.
 const sanitizeNumInput = (s) => String(s ?? '').replace(/[^\d.,]/g, '')
@@ -180,7 +180,8 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
   }
 
   function editTrade(t) {
-    // Giá lưu theo đồng, nhưng ô nhập dùng kiểu bảng giá: 58.50 = 58.500đ.
+    // Ô NHẬP giữ quy ước gõ kiểu Việt (parseShares/parsePriceToVnd đọc '.'=nghìn, ','=thập phân):
+    // giá nhập theo nghìn đồng, vd 58,50 = 58.500đ. (Khác phần HIỂN THỊ đã theo chuẩn quốc tế.)
     const toSharesInput = (n) => Number(n).toLocaleString('vi-VN')
     const toPriceInput = (n) => (Number(n) / 1000).toLocaleString('vi-VN', { maximumFractionDigits: 3 })
     setEditingId(t.id)

@@ -9,7 +9,7 @@ import { createChart, CandlestickSeries, HistogramSeries, CrosshairMode } from '
 const UP = '#16A34A'
 const DOWN = '#DC2626'
 
-export default function PriceChart({ candles, height = '72vh' }) {
+export default function PriceChart({ candles, height = '72vh', precision = 0 }) {
   const containerRef = useRef(null)
   const chartRef = useRef(null)
   const candleRef = useRef(null)
@@ -33,7 +33,8 @@ export default function PriceChart({ candles, height = '72vh' }) {
       timeScale: { borderColor: '#E2E8F0', timeVisible: true, secondsVisible: false },
       localization: {
         locale: 'vi-VN',
-        priceFormatter: (p) => Math.round(p).toLocaleString('vi-VN'),
+        priceFormatter: (p) =>
+          p.toLocaleString('en-US', { minimumFractionDigits: precision, maximumFractionDigits: precision }),
       },
     })
     const candle = chart.addSeries(CandlestickSeries, {
@@ -42,6 +43,7 @@ export default function PriceChart({ candles, height = '72vh' }) {
       borderVisible: false,
       wickUpColor: UP,
       wickDownColor: DOWN,
+      priceFormat: { type: 'price', precision, minMove: precision > 0 ? 1 / 10 ** precision : 1 },
     })
     candle.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.28 } })
     const vol = chart.addSeries(HistogramSeries, {
@@ -75,8 +77,9 @@ export default function PriceChart({ candles, height = '72vh' }) {
         color: c.close >= c.open ? 'rgba(22,163,74,.4)' : 'rgba(220,38,38,.4)',
       })),
     )
+    // Backend đã cắt nến về đúng cửa sổ của preset → chỉ cần fit toàn bộ vào khung nhìn.
     chartRef.current?.timeScale().fitContent()
   }, [candles])
 
-  return <div ref={containerRef} style={{ height, minHeight: 380, width: '100%' }} />
+  return <div ref={containerRef} style={{ height, minHeight: 240, width: '100%' }} />
 }

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Plus, Refresh, AlertCircle } from './icons.jsx'
 import TickerPicker from './TickerPicker.jsx'
+import TickerLogo from './TickerLogo.jsx'
 import { fetchPriceBoard, fetchPriceBoardGroup } from '../data/market.js'
 import { fetchTickers } from '../data/ai.js'
-import { tickerBadge } from '../data/stocks.js'
 
 // Màu bảng điện chuẩn VN: trần = tím, sàn = lơ (cyan), tham chiếu = vàng, tăng = lá, giảm = đỏ.
 const CEIL = '#8B5CF6'
@@ -50,14 +50,14 @@ function priceColor(r) {
   return REF
 }
 
-const vnd = (n) => (n == null ? '—' : n.toLocaleString('vi-VN'))
-const pctStr = (p) => (p == null ? '—' : (p >= 0 ? '+' : '') + p.toFixed(2).replace('.', ',') + '%')
-const chgStr = (c) => (c == null ? '—' : (c >= 0 ? '+' : '') + c.toLocaleString('vi-VN'))
+const vnd = (n) => (n == null ? '—' : n.toLocaleString('en-US'))
+const pctStr = (p) => (p == null ? '—' : (p >= 0 ? '+' : '') + p.toFixed(2) + '%')
+const chgStr = (c) => (c == null ? '—' : (c >= 0 ? '+' : '') + c.toLocaleString('en-US'))
 function volShort(v) {
   if (v == null) return '—'
-  if (v >= 1e6) return (v / 1e6).toFixed(2).replace('.', ',') + 'tr'
-  if (v >= 1e3) return Math.round(v / 1e3).toLocaleString('vi-VN') + 'K'
-  return v.toLocaleString('vi-VN')
+  if (v >= 1e6) return (v / 1e6).toFixed(2) + 'tr'
+  if (v >= 1e3) return Math.round(v / 1e3).toLocaleString('en-US') + 'K'
+  return v.toLocaleString('en-US')
 }
 
 // Bảng điện: tab Danh mục (sửa được) / VN30, giá thật cập nhật trong ngày (VNDIRECT, poll ~20s).
@@ -248,7 +248,6 @@ export default function PriceBoard({ onOpenStock }) {
             </thead>
             <tbody>
               {rows.map((r) => {
-                const b = tickerBadge(r.code)
                 const pc = priceColor(r)
                 return (
                   <tr key={r.code} className="group border-t border-slate-100 text-right">
@@ -260,12 +259,7 @@ export default function PriceBoard({ onOpenStock }) {
                         className="flex items-center gap-2.5 rounded-lg text-left transition-opacity enabled:hover:opacity-70 disabled:cursor-default"
                         title={onOpenStock ? `Xem chi tiết ${r.code}` : undefined}
                       >
-                        <div
-                          className="flex h-8 w-8 flex-none items-center justify-center rounded-lg text-[11px] font-bold"
-                          style={{ background: b.bg, color: b.fg }}
-                        >
-                          {r.code.slice(0, 3)}
-                        </div>
+                        <TickerLogo code={r.code} size={32} />
                         <div className="min-w-0 leading-tight">
                           <div className="tnum text-sm font-bold text-slate-900">{r.code}</div>
                           <div className="max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-slate-400">

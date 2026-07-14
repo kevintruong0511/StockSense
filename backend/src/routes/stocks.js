@@ -3,7 +3,7 @@ import { requireAuth } from '../auth.js'
 import { getMarketOverview, getMarketNews } from '../market/marketOverview.js'
 import { getPriceBoard, VN30 } from '../market/priceBoard.js'
 import { getStockData } from '../market/stockData.js'
-import { getCandles } from '../market/candles.js'
+import { getCandles, getIndexCandles } from '../market/candles.js'
 import { topTickers } from '../chat/history.js'
 
 const router = Router()
@@ -63,6 +63,13 @@ router.get('/detail', async (req, res) => {
       price: price
         ? {
             close: price.closeVnd ?? null,
+            // Mức thay đổi tuyệt đối (đồng) so với tham chiếu: ưu tiên số thật từ nguồn,
+            // nếu thiếu thì suy ra từ giá đóng cửa + %thay đổi.
+            change:
+              price.changeVnd ??
+              (price.closeVnd != null && price.pctChange != null && price.pctChange !== -100
+                ? Math.round(price.closeVnd - price.closeVnd / (1 + price.pctChange / 100))
+                : null),
             pctChange: price.pctChange ?? null,
             open: price.openVnd ?? null,
             high: price.highVnd ?? null,
@@ -126,6 +133,17 @@ router.get('/candles', async (req, res) => {
   } catch (err) {
     console.error('[stocks:candles]', err)
     res.status(500).json({ error: 'Không tải được dữ liệu biểu đồ.' })
+  }
+})
+
+// Nến VN-Index cho biểu đồ tổng quan ở trang chủ (?tf=D|W|M). Giá chỉ số (không ×1000).
+router.get('/market/index-candles', async (req, res) => {
+  const tf = String(req.query.tf || 'D').trim()
+  try {
+    res.json(await getIndexCandles(tf))
+  } catch (err) {
+    console.error('[stocks:index-candles]', err)
+    res.status(500).json({ error: 'Không tải được biểu đồ VN-Index.' })
   }
 })
 
