@@ -278,3 +278,11 @@ export const Close = (p) => (
     <path d="M18 6 6 18M6 6l12 12" />
   </Icon>
 )
+
+export const BookOpen = (p) => (
+  <Icon {...p}>
+    <path d="M12 6.5C10.5 5.5 8.5 5 6 5H3v13h3c2.5 0 4.5.5 6 1.5" />
+    <path d="M12 6.5C13.5 5.5 15.5 5 18 5h3v13h-3c-2.5 0-4.5.5-6 1.5" />
+    <path d="M12 6.5v13" />
+  </Icon>
+)

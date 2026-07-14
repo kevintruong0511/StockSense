@@ -7,6 +7,7 @@ import Dashboard from './screens/Dashboard.jsx'
 import AiAnalysis from './screens/AiAnalysis.jsx'
 import Portfolio from './screens/Portfolio.jsx'
 import Community from './screens/Community.jsx'
+import Guide from './screens/Guide.jsx'
 import Pricing from './screens/Pricing.jsx'
 import Checkout from './screens/Checkout.jsx'
 import { getToken, setToken, clearToken, fetchMe } from './data/auth.js'
@@ -14,14 +15,14 @@ import { fetchAiStatus } from './data/ai.js'
 import { getBillingStatus } from './data/billing.js'
 import { resetAllRuns } from './data/aiRunStore.js'
 
-// Màn cần đăng nhập: Dashboard + Phân tích cổ phiếu + Danh mục + Cộng Đồng + Thanh toán. Landing công khai.
-const PROTECTED = ['dashboard', 'ai', 'portfolio', 'community', 'checkout']
+// Màn cần đăng nhập: Dashboard + Phân tích cổ phiếu + Danh mục + Cộng Đồng + Hướng dẫn + Thanh toán. Landing công khai.
+const PROTECTED = ['dashboard', 'ai', 'portfolio', 'community', 'guide', 'checkout']
 
-const VALID_SCREENS = ['landing', 'dashboard', 'ai', 'portfolio', 'community', 'pricing', 'checkout']
+const VALID_SCREENS = ['landing', 'dashboard', 'ai', 'portfolio', 'community', 'guide', 'pricing', 'checkout']
 // Nhớ màn hình cuối để mở lại tab không văng về landing. KHÔNG nhớ các màn tạm
 // (auth: đang đăng nhập; checkout: đang thanh toán dở) — mở lại nên về app chính.
 const SCREEN_KEY = 'stocksense.screen'
-const REMEMBERED_SCREENS = ['dashboard', 'ai', 'portfolio', 'community', 'pricing']
+const REMEMBERED_SCREENS = ['dashboard', 'ai', 'portfolio', 'community', 'guide', 'pricing']
 
 export default function App() {
   const [screen, setScreen] = useState('landing')
@@ -261,6 +262,8 @@ export default function App() {
             <Portfolio billing={billing} onRefreshBilling={refreshBilling} onNavigate={go} />
           ) : screen === 'community' ? (
             <Community user={user} />
+          ) : screen === 'guide' ? (
+            <Guide onNavigate={go} />
           ) : screen === 'checkout' ? (
             <Checkout
               plan={checkout.plan}
