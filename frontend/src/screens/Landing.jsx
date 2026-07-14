@@ -253,9 +253,7 @@ export default function Landing({ onLogin, onRegister, onPricing, onStart, onSel
       <footer className="mx-auto mb-0 mt-auto w-full max-w-[1120px] p-10 max-sm:px-5">
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
           <div className="flex items-center gap-[9px]">
-            <div className="flex h-[26px] w-[26px] items-center justify-center rounded-[7px] bg-slate-900 text-[13px] font-extrabold text-white">
-              S
-            </div>
+            <Logo className="h-[26px]" />
             <span className="text-[15px] font-bold">StockSense VN</span>
           </div>
           <span className="text-[13px] text-slate-400">
