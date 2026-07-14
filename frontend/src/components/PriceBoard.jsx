@@ -61,7 +61,8 @@ function volShort(v) {
 }
 
 // Bảng điện: tab Danh mục (sửa được) / VN30, giá thật cập nhật trong ngày (VNDIRECT, poll ~20s).
-export default function PriceBoard() {
+// onOpenStock(code): mở màn chi tiết mã khi click vào mã.
+export default function PriceBoard({ onOpenStock }) {
   const [tab, setTab] = useState('watch') // 'watch' | 'vn30'
   const [watch, setWatch] = useState(loadWatch)
   const [rows, setRows] = useState([])
@@ -252,7 +253,13 @@ export default function PriceBoard() {
                 return (
                   <tr key={r.code} className="group border-t border-slate-100 text-right">
                     <td className="px-5 py-3 text-left">
-                      <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => onOpenStock?.(r.code)}
+                        disabled={!onOpenStock}
+                        className="flex items-center gap-2.5 rounded-lg text-left transition-opacity enabled:hover:opacity-70 disabled:cursor-default"
+                        title={onOpenStock ? `Xem chi tiết ${r.code}` : undefined}
+                      >
                         <div
                           className="flex h-8 w-8 flex-none items-center justify-center rounded-lg text-[11px] font-bold"
                           style={{ background: b.bg, color: b.fg }}
@@ -265,7 +272,7 @@ export default function PriceBoard() {
                             {r.name || (r.floor ? r.floor : '')}
                           </div>
                         </div>
-                      </div>
+                      </button>
                     </td>
                     <td className="tnum px-2.5 py-3 text-[13px] font-semibold" style={{ color: REF }}>{vnd(r.ref)}</td>
                     <td className="tnum px-2.5 py-3 text-[13px]" style={{ color: CEIL }}>{vnd(r.ceiling)}</td>

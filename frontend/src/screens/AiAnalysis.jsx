@@ -12,8 +12,8 @@ import { useAiRun, patchRun, getRun } from '../data/aiRunStore.js'
 // Store bền cho hội thoại + lượt đang stream — sống qua chuyển màn nên AI chạy tiếp ở
 // nền và quay lại thấy đúng chỗ. Chỉ giữ state hội thoại/stream ở đây; input nháp
 // (câu hỏi, ảnh, ghi chú), danh sách phiên, model… vẫn là state cục bộ (tự nạp lại).
-const AI_KEY = 'ai:analysis'
-const AI_INITIAL = {
+export const AI_KEY = 'ai:analysis'
+export const AI_INITIAL = {
   chat: [], // {role, content, sources?, hadInline?, images?}
   activeSessionId: null,
   ticker: 'FPT',

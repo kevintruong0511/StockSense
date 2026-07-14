@@ -4,21 +4,22 @@ import TopBar from './components/TopBar.jsx'
 import Landing from './screens/Landing.jsx'
 import Auth from './screens/Auth.jsx'
 import Dashboard from './screens/Dashboard.jsx'
-import AiAnalysis from './screens/AiAnalysis.jsx'
+import AiAnalysis, { AI_KEY, AI_INITIAL } from './screens/AiAnalysis.jsx'
 import Portfolio from './screens/Portfolio.jsx'
 import Community from './screens/Community.jsx'
 import Guide from './screens/Guide.jsx'
 import Pricing from './screens/Pricing.jsx'
 import Checkout from './screens/Checkout.jsx'
+import StockDetail from './screens/StockDetail.jsx'
 import { getToken, setToken, clearToken, fetchMe } from './data/auth.js'
 import { fetchAiStatus } from './data/ai.js'
 import { getBillingStatus } from './data/billing.js'
-import { resetAllRuns } from './data/aiRunStore.js'
+import { resetAllRuns, patchRun } from './data/aiRunStore.js'
 
-// Màn cần đăng nhập: Dashboard + Phân tích cổ phiếu + Danh mục + Cộng Đồng + Hướng dẫn + Thanh toán. Landing công khai.
-const PROTECTED = ['dashboard', 'ai', 'portfolio', 'community', 'guide', 'checkout']
+// Màn cần đăng nhập: Dashboard + Phân tích cổ phiếu + Danh mục + Cộng Đồng + Hướng dẫn + Chi tiết mã + Thanh toán. Landing công khai.
+const PROTECTED = ['dashboard', 'ai', 'portfolio', 'community', 'guide', 'stock', 'checkout']
 
-const VALID_SCREENS = ['landing', 'dashboard', 'ai', 'portfolio', 'community', 'guide', 'pricing', 'checkout']
+const VALID_SCREENS = ['landing', 'dashboard', 'ai', 'portfolio', 'community', 'guide', 'stock', 'pricing', 'checkout']
 // Nhớ màn hình cuối để mở lại tab không văng về landing. KHÔNG nhớ các màn tạm
 // (auth: đang đăng nhập; checkout: đang thanh toán dở) — mở lại nên về app chính.
 const SCREEN_KEY = 'stocksense.screen'
@@ -34,6 +35,7 @@ export default function App() {
   const [billing, setBilling] = useState(null) // { plan, planExpiresAt, usage:{...} }
   const [checkout, setCheckout] = useState({ plan: 'pro', cycle: 'monthly' })
   const [authMode, setAuthMode] = useState('login') // 'login' | 'register' cho màn Auth
+  const [selectedTicker, setSelectedTicker] = useState(null) // mã đang xem ở màn chi tiết
 
   // Khôi phục phiên từ token đã lưu, rồi áp deep-link: ?screen=dashboard
   // requestId chặn race khi boot() được gọi lại (nút "Thử lại") trong lúc lần gọi trước chưa xong.
@@ -150,6 +152,21 @@ export default function App() {
   const goCheckout = useCallback((plan, cycle = 'monthly') => {
     setCheckout({ plan, cycle })
     setScreen('checkout')
+  }, [])
+
+  // Mở màn chi tiết một mã (biểu đồ + số liệu thật). Dùng khi click mã ở bất cứ đâu.
+  const openStock = useCallback((code) => {
+    const c = String(code || '').trim().toUpperCase()
+    if (!c) return
+    setSelectedTicker(c)
+    setScreen('stock')
+  }, [])
+
+  // Chuyển sang màn Phân tích AI với mã đã điền sẵn (giữ nguyên hội thoại/phiên hiện có).
+  const analyzeTicker = useCallback((code) => {
+    const c = String(code || '').trim().toUpperCase()
+    if (c) patchRun(AI_KEY, (s) => ({ ...AI_INITIAL, ...s, ticker: c }))
+    setScreen('ai')
   }, [])
 
   // Chặn vào màn cần đăng nhập khi chưa có phiên → chuyển sang màn đăng nhập.
@@ -270,6 +287,24 @@ export default function App() {
             <Portfolio billing={billing} onRefreshBilling={refreshBilling} onNavigate={go} />
           ) : screen === 'community' ? (
             <Community user={user} />
+          ) : screen === 'stock' ? (
+            selectedTicker ? (
+              <StockDetail
+                code={selectedTicker}
+                onBack={() => go('dashboard')}
+                onAnalyze={analyzeTicker}
+              />
+            ) : (
+              <Dashboard
+                user={user}
+                newsState={newsState}
+                onRetryNews={retryNews}
+                billing={billing}
+                onRefreshBilling={refreshBilling}
+                onNavigate={go}
+                onOpenStock={openStock}
+              />
+            )
           ) : screen === 'guide' ? (
             <Guide onNavigate={go} />
           ) : screen === 'checkout' ? (
@@ -296,6 +331,7 @@ export default function App() {
               billing={billing}
               onRefreshBilling={refreshBilling}
               onNavigate={go}
+              onOpenStock={openStock}
             />
           )}
         </div>

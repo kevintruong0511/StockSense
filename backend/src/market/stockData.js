@@ -108,8 +108,20 @@ function formatSnapshot({ code, price, valuation, fundamentals, trend, profile, 
   return lines.join('\n')
 }
 
-// Trả về { code, asOf, text } hoặc null nếu mã không có dữ liệu.
-export async function getStockSnapshot(rawCode) {
+// Sàn niêm yết chuẩn hoá về mã sàn TradingView (HOSE/HNX/UPCOM).
+function normalizeExchange(floor) {
+  const f = String(floor || '').toUpperCase()
+  if (f.includes('HOSE') || f.includes('HSX')) return 'HOSE'
+  if (f.includes('HNX')) return 'HNX'
+  if (f.includes('UPCOM') || f.includes('UPCROM')) return 'UPCOM'
+  return null
+}
+
+// Gộp dữ liệu THẬT của một mã từ mọi nguồn → object CÓ CẤU TRÚC.
+// Dùng chung cho cả snapshot AI (format text) lẫn màn chi tiết cổ phiếu (JSON).
+// MỖI request fetch mới hoàn toàn — KHÔNG cache (theo yêu cầu sản phẩm).
+// Trả về object hoặc null nếu mã không có dữ liệu.
+export async function getStockData(rawCode) {
   const code = String(rawCode || '').trim().toUpperCase()
   if (!/^[A-Z0-9]{2,10}$/.test(code)) return null
 
@@ -137,9 +149,19 @@ export async function getStockSnapshot(rawCode) {
   // 52 tuần: ưu tiên SSI (price.high52) rồi tới VNDIRECT ratios.
   const high52 = price?.high52 ?? vR?.high52 ?? null
   const low52 = price?.low52 ?? vR?.low52 ?? null
+  const asOf = price?.date || new Date().toISOString().slice(0, 10)
+  const exchange = normalizeExchange(profile?.floor)
+
+  return { code, asOf, exchange, price, valuation, fundamentals, trend, profile, technical, high52, low52 }
+}
+
+// Trả về { code, asOf, text } hoặc null nếu mã không có dữ liệu (dùng cho prompt AI).
+export async function getStockSnapshot(rawCode) {
+  const data = await getStockData(rawCode)
+  if (!data) return null
+  const { code, asOf, price, valuation, fundamentals, trend, profile, technical, high52, low52 } = data
 
   const text = formatSnapshot({ code, price, valuation, fundamentals, trend, profile, high52, low52, technical })
-  const asOf = price?.date || new Date().toISOString().slice(0, 10)
 
   const sources = [
     ...new Set([price?.source, valuation?.source, fundamentals?.source, trend?.source, profile?.source].filter(Boolean)),

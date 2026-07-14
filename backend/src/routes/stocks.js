@@ -2,6 +2,8 @@ import { Router } from 'express'
 import { requireAuth } from '../auth.js'
 import { getMarketOverview, getMarketNews } from '../market/marketOverview.js'
 import { getPriceBoard, VN30 } from '../market/priceBoard.js'
+import { getStockData } from '../market/stockData.js'
+import { getCandles } from '../market/candles.js'
 import { topTickers } from '../chat/history.js'
 
 const router = Router()
@@ -40,6 +42,90 @@ router.get('/market/top-analyzed', async (req, res) => {
   } catch (err) {
     console.error('[stocks:top-analyzed]', err)
     res.status(500).json({ error: 'Không tải được bảng xếp hạng.' })
+  }
+})
+
+// Chi tiết một mã: dữ liệu THẬT có cấu trúc cho màn chi tiết (giá, định giá, cơ bản,
+// xu hướng, kỹ thuật, hồ sơ). Biểu đồ do widget TradingView tự phục vụ → chỉ trả tvSymbol.
+router.get('/detail', async (req, res) => {
+  const code = String(req.query.code || '').trim().toUpperCase()
+  if (!/^[A-Z0-9]{2,10}$/.test(code)) return res.status(400).json({ error: 'Mã không hợp lệ.' })
+  try {
+    const d = await getStockData(code)
+    if (!d) return res.status(404).json({ error: 'Không có dữ liệu cho mã này.' })
+    const { price, valuation, fundamentals, trend, technical, profile, high52, low52, exchange } = d
+    res.json({
+      code,
+      name: profile?.name || code,
+      exchange, // 'HOSE' | 'HNX' | 'UPCOM' | null
+      tvSymbol: exchange ? `${exchange}:${code}` : code, // symbol cho widget TradingView
+      asOf: d.asOf,
+      price: price
+        ? {
+            close: price.closeVnd ?? null,
+            pctChange: price.pctChange ?? null,
+            open: price.openVnd ?? null,
+            high: price.highVnd ?? null,
+            low: price.lowVnd ?? null,
+            volume: price.nmVolume ?? null,
+            date: price.date ?? null,
+          }
+        : null,
+      high52,
+      low52,
+      valuation: valuation
+        ? {
+            marketcap: valuation.marketcap ?? null,
+            outstandingShares: valuation.outstandingShares ?? null,
+            pe: valuation.pe ?? null,
+            pb: valuation.pb ?? null,
+            ps: valuation.ps ?? null,
+            beta: valuation.beta ?? null,
+          }
+        : null,
+      fundamentals: fundamentals
+        ? {
+            roe: fundamentals.roe ?? null,
+            roaa: fundamentals.roaa ?? null,
+            netProfitGrowthYoY: fundamentals.netProfitGrowthYoY ?? null,
+          }
+        : null,
+      trend: trend ? { m1: trend.m1, m3: trend.m3, m6: trend.m6, y1: trend.y1 } : null,
+      technical: technical
+        ? {
+            ma20: technical.ma20 ?? null,
+            ma50: technical.ma50 ?? null,
+            ma200: technical.ma200 ?? null,
+            rsi14: technical.rsi14 ?? null,
+            support20: technical.support20 ?? null,
+            resistance20: technical.resistance20 ?? null,
+          }
+        : null,
+      profile: profile
+        ? {
+            floor: profile.floor ?? null,
+            foundDate: profile.foundDate ?? null,
+            employees: profile.employees ?? null,
+            summary: profile.summary ?? null,
+          }
+        : null,
+    })
+  } catch (err) {
+    console.error('[stocks:detail]', err)
+    res.status(500).json({ error: 'Không tải được dữ liệu cổ phiếu.' })
+  }
+})
+
+// Nến OHLCV thật cho biểu đồ (?code=FPT&tf=D|W|M|15|60). Giá VND.
+router.get('/candles', async (req, res) => {
+  const code = String(req.query.code || '').trim().toUpperCase()
+  const tf = String(req.query.tf || 'D').trim()
+  if (!/^[A-Z0-9]{2,10}$/.test(code)) return res.status(400).json({ error: 'Mã không hợp lệ.' })
+  try {
+    res.json(await getCandles(code, tf))
+  } catch (err) {
+    console.error('[stocks:candles]', err)
+    res.status(500).json({ error: 'Không tải được dữ liệu biểu đồ.' })
   }
 })
 

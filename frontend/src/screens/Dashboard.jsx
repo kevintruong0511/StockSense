@@ -84,7 +84,7 @@ function buildDashStats(vni, breadth) {
   ]
 }
 
-export default function Dashboard({ user, newsState: newsStateProp, onRetryNews, billing, onRefreshBilling, onNavigate }) {
+export default function Dashboard({ user, newsState: newsStateProp, onRetryNews, billing, onRefreshBilling, onNavigate, onOpenStock }) {
   // Dữ liệu thị trường thật.
   const [dashStats, setDashStats] = useState(null)
   const [dashLoading, setDashLoading] = useState(true)
@@ -189,7 +189,7 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
         <MarketAiCard billing={billing} onRefreshBilling={onRefreshBilling} onNavigate={onNavigate} />
 
         {/* bảng điện — giá thật trong ngày (VNDIRECT), tab Danh mục/VN30, tự làm mới trong giờ giao dịch */}
-        <PriceBoard />
+        <PriceBoard onOpenStock={onOpenStock} />
 
         {/* two widgets */}
         <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5">
@@ -277,9 +277,10 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
                   const b = tickerBadge(t.code)
                   const color = t.pctChange == null ? '#94A3B8' : t.pctChange >= 0 ? UP : DOWN
                   return (
-                    <div
+                    <button
                       key={t.code}
-                      className="flex w-full items-center gap-3 rounded-[9px] px-2 py-[11px] text-left"
+                      onClick={() => onOpenStock?.(t.code)}
+                      className="flex w-full items-center gap-3 rounded-[9px] px-2 py-[11px] text-left transition-colors hover:bg-slate-50"
                     >
                       <span className="tnum w-5 text-center text-[13px] font-extrabold text-slate-300">
                         {i + 1}
@@ -299,7 +300,7 @@ export default function Dashboard({ user, newsState: newsStateProp, onRetryNews,
                       <span className="tnum text-[12.5px] font-bold" style={{ color }}>
                         {pctFmt(t.pctChange)}
                       </span>
-                    </div>
+                    </button>
                   )
                 })
               )}

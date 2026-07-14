@@ -28,3 +28,11 @@ export const fetchPriceBoardGroup = (group = 'vn30') =>
 // Mã được phân tích nhiều nhất (đếm phiên chat thật) trong N ngày qua.
 export const fetchTopAnalyzed = (days = 7, limit = 5) =>
   authedGet(`/stocks/market/top-analyzed?days=${days}&limit=${limit}`)
+
+// Chi tiết một mã (giá, định giá, cơ bản, kỹ thuật, hồ sơ) — dữ liệu THẬT, fetch mới.
+export const fetchStockDetail = (code) =>
+  authedGet(`/stocks/detail?code=${encodeURIComponent(String(code || '').trim().toUpperCase())}`)
+
+// Nến OHLCV thật cho biểu đồ. tf: '15' | '60' | 'D' | 'W' | 'M'.
+export const fetchCandles = (code, tf = 'D') =>
+  authedGet(`/stocks/candles?code=${encodeURIComponent(String(code || '').trim().toUpperCase())}&tf=${encodeURIComponent(tf)}`)
