@@ -9,6 +9,7 @@ import {
   BookOpen,
   Check,
 } from '../components/icons.jsx'
+import Logo from '../components/Logo.jsx'
 
 const CHIPS = ['FPT', 'HPG', 'VNM', 'VCB', 'MWG']
 
@@ -64,9 +65,7 @@ export default function Landing({ onLogin, onRegister, onPricing, onStart, onSel
       {/* top bar */}
       <header className="mx-auto flex w-full max-w-[1200px] items-center justify-between px-10 py-5 max-sm:px-5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] bg-gradient-to-br from-blue-600 to-blue-700 text-base font-extrabold text-white">
-            S
-          </div>
+          <Logo className="h-[34px]" />
           <span className="text-[19px] font-extrabold tracking-[-0.02em]">
             StockSense<span className="text-blue-600"> VN</span>
           </span>
@@ -97,7 +96,7 @@ export default function Landing({ onLogin, onRegister, onPricing, onStart, onSel
       <section className="mx-auto w-full max-w-[1000px] px-10 pb-10 pt-14 text-center max-sm:px-5">
         <div className="mb-[26px] inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3.5 py-1.5 text-[13px] font-semibold text-blue-600">
           <Sparkle size={15} />
-          Phân tích cổ phiếu Việt bằng AI
+          Phân tích cổ phiếu Việt bằng AI phân tích chuyên nghiệp
         </div>
         <h1 className="m-0 mb-5 text-[56px] font-extrabold leading-[1.05] tracking-[-0.03em] [text-wrap:balance] max-md:text-[40px]">
           Hiểu sâu cổ phiếu Việt
@@ -105,9 +104,10 @@ export default function Landing({ onLogin, onRegister, onPricing, onStart, onSel
           trước khi xuống tiền
         </h1>
         <p className="mx-auto mb-9 max-w-[640px] text-[19px] leading-[1.55] text-slate-600 [text-wrap:pretty]">
-          AI đọc báo cáo tài chính, tin tức và tự research web — bóc tách luận điểm, chỉ ra red flag
-          rồi chốt khuyến nghị <strong className="font-bold text-slate-800">Mua / Bán / Giữ</strong> kèm
-          nguồn trích dẫn. Đăng ký để trải nghiệm đầy đủ các tính năng.
+          Tích hợp <strong className="font-bold text-slate-800">AI chuyên sâu</strong> phân tích thị
+          trường, phân tích từng mã cổ phiếu và đưa ra dự đoán với{' '}
+          <strong className="font-bold text-slate-800">độ chính xác cao</strong>. Đăng ký để trải
+          nghiệm đầy đủ các tính năng.
         </p>
 
         {/* CTA chính — làm nổi đăng ký & đăng nhập */}

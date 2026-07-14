@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Sparkle, Check, ArrowRight, InfoCircle, Search, BarChart3 } from '../components/icons.jsx'
+import Logo from '../components/Logo.jsx'
 import { redeemCode } from '../data/billing.js'
 
 // Định dạng số tiền chuẩn quốc tế (ngăn cách nghìn bằng dấu phẩy).
@@ -417,9 +418,7 @@ export default function Pricing({
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-white to-slate-100">
       <header className="mx-auto flex w-full max-w-[1200px] items-center justify-between px-10 py-5 max-sm:px-6">
         <button onClick={onBack} className="flex items-center gap-2.5">
-          <div className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] bg-gradient-to-br from-blue-600 to-blue-700 text-base font-extrabold text-white">
-            S
-          </div>
+          <Logo className="h-[34px]" />
           <span className="text-[19px] font-extrabold tracking-[-0.02em]">
             StockSense<span className="text-blue-600"> VN</span>
           </span>

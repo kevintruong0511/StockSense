@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Mail, Lock, User, Eye, EyeOff, Sparkle, Check } from '../components/icons.jsx'
+import Logo from '../components/Logo.jsx'
 import { login, register } from '../data/auth.js'
 
 const BULLETS = [
@@ -47,9 +48,7 @@ export default function Auth({ mode: initialMode = 'login', onSuccess, onLogo })
       {/* Panel thương hiệu (ẩn trên mobile) */}
       <aside className="relative hidden w-[46%] flex-col justify-between overflow-hidden bg-slate-900 p-12 text-white lg:flex">
         <button onClick={onLogo} className="flex items-center gap-2.5 text-left">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-br from-blue-600 to-blue-700 text-base font-extrabold text-white">
-            S
-          </div>
+          <Logo className="h-9" />
           <span className="text-lg font-extrabold tracking-[-0.02em]">
             StockSense<span className="text-blue-400"> VN</span>
           </span>
@@ -86,9 +85,7 @@ export default function Auth({ mode: initialMode = 'login', onSuccess, onLogo })
         <div className="w-full max-w-[400px]">
           {/* logo cho mobile */}
           <button onClick={onLogo} className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-gradient-to-br from-blue-600 to-blue-700 text-[15px] font-extrabold text-white">
-              S
-            </div>
+            <Logo className="h-8" />
             <span className="text-base font-extrabold tracking-[-0.02em]">
               StockSense<span className="text-blue-600"> VN</span>
             </span>

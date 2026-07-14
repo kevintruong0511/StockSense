@@ -12,6 +12,7 @@ import Pricing from './screens/Pricing.jsx'
 import Checkout from './screens/Checkout.jsx'
 import StockDetail from './screens/StockDetail.jsx'
 import Settings from './screens/Settings.jsx'
+import Logo from './components/Logo.jsx'
 import { getToken, setToken, clearToken, fetchMe } from './data/auth.js'
 import { fetchAiStatus } from './data/ai.js'
 import { getBillingStatus } from './data/billing.js'
@@ -212,9 +213,7 @@ export default function App() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-100">
         <div className="flex max-w-sm flex-col items-center gap-4 text-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-base font-extrabold text-white">
-            S
-          </div>
+          <Logo className="h-10" />
           <p className="text-sm font-medium text-slate-600">
             Không thể kết nối tới máy chủ. Phiên đăng nhập của bạn vẫn còn hiệu lực — vui lòng thử lại.
           </p>
@@ -235,9 +234,7 @@ export default function App() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-100">
         <div className="flex items-center gap-2.5 text-slate-400">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-[15px] font-extrabold text-white">
-            S
-          </div>
+          <Logo className="h-8" />
           <span className="text-sm font-semibold">Đang tải…</span>
         </div>
       </div>

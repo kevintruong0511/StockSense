@@ -13,6 +13,7 @@ import {
   Globe,
   LogOut,
 } from './icons.jsx'
+import Logo from './Logo.jsx'
 
 // Điều hướng gom theo nhóm chức năng: Đầu tư / Khám phá / Tài khoản.
 const NAV_GROUPS = [
@@ -88,9 +89,7 @@ export default function Sidebar({
     <aside className="sticky top-0 flex h-screen w-[236px] flex-none flex-col overflow-y-auto bg-slate-900 text-slate-300">
       {/* logo */}
       <button onClick={onLogo} className="flex items-center gap-2.5 px-5 pb-[22px] pt-5 text-left">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-[15px] font-extrabold text-white">
-          S
-        </div>
+        <Logo className="h-8" />
         <span className="text-base font-extrabold tracking-[-0.02em] text-white">
           StockSense<span className="text-blue-400"> VN</span>
         </span>
