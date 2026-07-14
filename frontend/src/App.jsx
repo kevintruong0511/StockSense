@@ -33,6 +33,7 @@ export default function App() {
   const [aiEnabled, setAiEnabled] = useState(false)
   const [billing, setBilling] = useState(null) // { plan, planExpiresAt, usage:{...} }
   const [checkout, setCheckout] = useState({ plan: 'pro', cycle: 'monthly' })
+  const [authMode, setAuthMode] = useState('login') // 'login' | 'register' cho màn Auth
 
   // Khôi phục phiên từ token đã lưu, rồi áp deep-link: ?screen=dashboard
   // requestId chặn race khi boot() được gọi lại (nút "Thử lại") trong lúc lần gọi trước chưa xong.
@@ -139,6 +140,12 @@ export default function App() {
   // ---------- navigation ----------
   const go = useCallback((s) => setScreen(s), [])
 
+  // Mở màn đăng nhập/đăng ký ở đúng chế độ (login mặc định, register khi khách bấm "Đăng ký").
+  const goAuth = useCallback((mode = 'login') => {
+    setAuthMode(mode)
+    setScreen('auth')
+  }, [])
+
   // Mở màn thanh toán cho 1 gói + chu kỳ.
   const goCheckout = useCallback((plan, cycle = 'monthly') => {
     setCheckout({ plan, cycle })
@@ -215,10 +222,11 @@ export default function App() {
   if (screen === 'landing') {
     return (
       <Landing
-        onLogin={() => go('auth')}
+        onLogin={() => goAuth('login')}
+        onRegister={() => goAuth('register')}
         onPricing={() => go('pricing')}
-        onStart={guard(() => go('dashboard'))}
-        onSelectTicker={guard(() => go('dashboard'))}
+        onStart={() => (user ? go('dashboard') : goAuth('register'))}
+        onSelectTicker={() => (user ? go('dashboard') : goAuth('register'))}
       />
     )
   }
@@ -226,14 +234,14 @@ export default function App() {
   // ---------- bảng giá (công khai cho khách; bản trong app ở app shell) ----------
   if (screen === 'pricing' && !user) {
     return (
-      <Pricing variant="guest" currentPlan="free" onBack={() => go('landing')} onLogin={() => go('auth')} />
+      <Pricing variant="guest" currentPlan="free" onBack={() => go('landing')} onLogin={() => goAuth('login')} />
     )
   }
 
   // ---------- màn đăng nhập / đăng ký ----------
   // Yêu cầu đăng nhập cho màn trong app: chưa có user thì luôn hiện Auth.
   if (screen === 'auth' || (PROTECTED.includes(screen) && !user)) {
-    return <Auth onSuccess={onAuthSuccess} onLogo={() => go('landing')} />
+    return <Auth mode={authMode} onSuccess={onAuthSuccess} onLogo={() => go('landing')} />
   }
 
   // ---------- app shell ----------
