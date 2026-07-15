@@ -3,8 +3,12 @@
 import { api } from './auth.js'
 import { streamSSE } from './sse.js'
 
-// { trades:[…], holdings:[{ticker,qty,avgCost,invested,price,pctChange,marketValue,unrealizedPnl,unrealizedPct,realizedPnl,name,lastBuyDate}], asOf, asOfTime }
+// { trades:[…], holdings:[{ticker,qty,avgCost,invested,price,pctChange,marketValue,unrealizedPnl,unrealizedPct,realizedPnl,name,lastBuyDate}], asOf, asOfTime, portfolioNote }
 export const fetchPortfolio = () => api('/portfolio/trades', { auth: true })
+
+// Ghi chú CHUNG cho cả danh mục (chiến lược/nhận định tổng quan) — khác note của từng lệnh.
+export const updatePortfolioNote = (note) =>
+  api('/portfolio/note', { method: 'PUT', auth: true, body: { note } }).then((d) => d?.note)
 
 // t = { ticker, side:'buy'|'sell', quantity, price, tradeDate, note }
 export const addTrade = (t) =>

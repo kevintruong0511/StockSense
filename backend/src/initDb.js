@@ -20,6 +20,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_idx ON users (lower(email));
 ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'free';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMPTZ;
 
+-- Ghi chú CHUNG cho toàn bộ danh mục (chiến lược/nhận định tổng quan) — khác với
+-- cột note của từng lệnh trong bảng trades bên dưới (gắn với 1 giao dịch cụ thể).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS portfolio_note TEXT;
+
 -- Đếm lượt gọi AI theo ngày (ngày tính theo giờ VN ở tầng app).
 CREATE TABLE IF NOT EXISTS ai_usage (
   user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

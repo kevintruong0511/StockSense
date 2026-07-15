@@ -74,6 +74,18 @@ export async function deleteTradesByTicker(userId, ticker) {
   return rowCount
 }
 
+// Ghi chú CHUNG cho cả danh mục (chiến lược/nhận định tổng quan) — lưu trên users,
+// khác với note của từng lệnh trong bảng trades.
+export async function getPortfolioNote(userId) {
+  const { rows } = await query('SELECT portfolio_note FROM users WHERE id = $1', [userId])
+  return rows[0]?.portfolio_note || ''
+}
+
+export async function setPortfolioNote(userId, note) {
+  await query('UPDATE users SET portfolio_note = $2 WHERE id = $1', [userId, note])
+  return note
+}
+
 // Tính vị thế từ danh sách lệnh (đã sắp cũ→mới) theo GIÁ VỐN BÌNH QUÂN.
 // Trả { holdings: [{ticker, qty, avgCost, invested, lastBuyDate}], realized: {ticker: pnl} }.
 // - holdings chỉ gồm vị thế ĐANG MỞ (qty > 0).

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Sparkle, Plus, AlertCircle, Wallet, Trash } from '../components/icons.jsx'
+import { Sparkle, Plus, AlertCircle, Wallet, Trash, FileDoc } from '../components/icons.jsx'
 import Markdown from '../components/Markdown.jsx'
 import TickerPicker from '../components/TickerPicker.jsx'
 import ModelToggle from '../components/ModelToggle.jsx'
@@ -10,6 +10,7 @@ import {
   updateTrade,
   deleteTrade,
   deleteTradesByTicker,
+  updatePortfolioNote,
   streamPortfolioAnalyze,
 } from '../data/portfolio.js'
 import { fetchTickers } from '../data/ai.js'
@@ -62,6 +63,60 @@ function isMarketHours() {
 
 const emptyForm = () => ({ ticker: '', side: 'buy', quantity: '', price: '', tradeDate: todayVN(), note: '' })
 
+// Ghi chú CHUNG cho cả danh mục (chiến lược/nhận định tổng quan) — khác note của từng lệnh
+// trong sổ lệnh bên dưới. Giữ nháp cục bộ, chỉ đồng bộ lại với server khi `note` (prop) đổi
+// từ nơi khác (vd nạp lại trang) để không đè nội dung đang gõ dở.
+function PortfolioNoteCard({ note, onSave }) {
+  const [draft, setDraft] = useState(note)
+  const [saving, setSaving] = useState(false)
+  const [savedAt, setSavedAt] = useState(0)
+  const [error, setError] = useState('')
+
+  useEffect(() => setDraft(note), [note])
+
+  const dirty = draft !== note
+  const save = async () => {
+    if (saving || !dirty) return
+    setSaving(true)
+    setError('')
+    try {
+      await onSave(draft)
+      setSavedAt(Date.now())
+    } catch (e) {
+      setError(e.message || 'Không lưu được ghi chú.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-2.5 flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-200">
+        <FileDoc size={16} className="text-blue-600 dark:text-blue-400" />
+        Ghi chú danh mục
+      </div>
+      <textarea
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        rows={3}
+        placeholder="Chiến lược, nhận định chung về toàn bộ danh mục của bạn…"
+        className="w-full resize-y rounded-lg border border-slate-300 p-3 text-sm text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+      />
+      <div className="mt-2 flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={!dirty || saving}
+          className="rounded-lg bg-blue-600 px-4 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saving ? 'Đang lưu…' : 'Lưu ghi chú'}
+        </button>
+        {!dirty && savedAt > 0 && <span className="text-[12.5px] text-green-600 dark:text-green-400">Đã lưu</span>}
+        {error && <span className="text-[12.5px] text-red-600 dark:text-red-400">{error}</span>}
+      </div>
+    </div>
+  )
+}
+
 export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
   const [trades, setTrades] = useState([])
   const [holdings, setHoldings] = useState([])
@@ -69,6 +124,7 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
   const [asOfTime, setAsOfTime] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [note, setNote] = useState('')
 
   const [universe, setUniverse] = useState([])
   const [form, setForm] = useState(emptyForm)
@@ -123,6 +179,8 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
       setHoldings(d?.holdings || [])
       setAsOf(d?.asOf || null)
       setAsOfTime(d?.asOfTime || null)
+      // Chỉ đồng bộ ghi chú ở lần nạp đầu — tránh đè nội dung đang gõ dở khi poll nền.
+      if (initial) setNote(d?.portfolioNote || '')
       setLoadError('')
     } catch (e) {
       setLoadError(e.message || 'Không tải được sổ lệnh.')
@@ -195,6 +253,11 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
     })
     setFormError('')
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function saveNote(text) {
+    const saved = await updatePortfolioNote(text)
+    setNote(saved ?? text)
   }
 
   async function removeTrade(id) {
@@ -281,6 +344,9 @@ export default function Portfolio({ billing, onRefreshBilling, onNavigate }) {
           <b>AI lập kế hoạch hành động</b> (Giữ / Mua thêm / Chốt lời / Cắt lỗ) cho từng mã.
         </p>
       </div>
+
+      {/* ghi chú chung cho cả danh mục */}
+      <PortfolioNoteCard note={note} onSave={saveNote} />
 
       {/* form thêm/sửa lệnh */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">

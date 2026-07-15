@@ -14,7 +14,9 @@ import {
   computeHoldings,
   deleteTrade,
   deleteTradesByTicker,
+  getPortfolioNote,
   listTrades,
+  setPortfolioNote,
   updateTrade,
 } from '../portfolio/portfolio.js'
 
@@ -72,10 +74,29 @@ router.get('/trades', async (req, res) => {
     const trades = await listTrades(req.userId)
     const { holdings, realized } = computeHoldings(trades)
     const { enriched, board } = await enrichHoldings(holdings, realized)
-    res.json({ trades, holdings: enriched, asOf: board.asOf ?? null, asOfTime: board.asOfTime ?? null })
+    const note = await getPortfolioNote(req.userId).catch(() => '')
+    res.json({
+      trades,
+      holdings: enriched,
+      asOf: board.asOf ?? null,
+      asOfTime: board.asOfTime ?? null,
+      portfolioNote: note,
+    })
   } catch (err) {
     console.error('[portfolio:list]', err)
     res.status(500).json({ error: 'Không tải được sổ lệnh.' })
+  }
+})
+
+// Lưu ghi chú CHUNG cho cả danh mục.
+router.put('/note', async (req, res) => {
+  const note = String(req.body?.note ?? '').slice(0, 2000)
+  try {
+    await setPortfolioNote(req.userId, note)
+    res.json({ note })
+  } catch (err) {
+    console.error('[portfolio:note]', err)
+    res.status(500).json({ error: 'Không lưu được ghi chú.' })
   }
 })
 
