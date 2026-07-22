@@ -11,6 +11,7 @@ import Guide from './screens/Guide.jsx'
 import Pricing from './screens/Pricing.jsx'
 import Checkout from './screens/Checkout.jsx'
 import StockDetail from './screens/StockDetail.jsx'
+import Backtest from './screens/Backtest.jsx'
 import Settings from './screens/Settings.jsx'
 import Logo from './components/Logo.jsx'
 import { getToken, setToken, clearToken, fetchMe } from './data/auth.js'
@@ -20,13 +21,13 @@ import { resetAllRuns, patchRun } from './data/aiRunStore.js'
 import { useTheme } from './data/theme.js'
 
 // Màn cần đăng nhập: Dashboard + Phân tích cổ phiếu + Danh mục + Cộng Đồng + Hướng dẫn + Chi tiết mã + Thanh toán. Landing công khai.
-const PROTECTED = ['dashboard', 'ai', 'portfolio', 'community', 'guide', 'settings', 'stock', 'checkout']
+const PROTECTED = ['dashboard', 'ai', 'backtest', 'portfolio', 'community', 'guide', 'settings', 'stock', 'checkout']
 
-const VALID_SCREENS = ['landing', 'dashboard', 'ai', 'portfolio', 'community', 'guide', 'settings', 'stock', 'pricing', 'checkout']
+const VALID_SCREENS = ['landing', 'dashboard', 'ai', 'backtest', 'portfolio', 'community', 'guide', 'settings', 'stock', 'pricing', 'checkout']
 // Nhớ màn hình cuối để mở lại tab không văng về landing. KHÔNG nhớ các màn tạm
 // (auth: đang đăng nhập; checkout: đang thanh toán dở) — mở lại nên về app chính.
 const SCREEN_KEY = 'stocksense.screen'
-const REMEMBERED_SCREENS = ['dashboard', 'ai', 'portfolio', 'community', 'guide', 'settings', 'pricing']
+const REMEMBERED_SCREENS = ['dashboard', 'ai', 'backtest', 'portfolio', 'community', 'guide', 'settings', 'pricing']
 
 export default function App() {
   const [screen, setScreen] = useState('landing')
@@ -294,6 +295,14 @@ export default function App() {
           {screen === 'ai' ? (
             <AiAnalysis
               aiEnabled={aiEnabled}
+              billing={billing}
+              onRefreshBilling={refreshBilling}
+              onNavigate={go}
+            />
+          ) : screen === 'backtest' ? (
+            <Backtest
+              code={selectedTicker}
+              theme={effectiveTheme}
               billing={billing}
               onRefreshBilling={refreshBilling}
               onNavigate={go}

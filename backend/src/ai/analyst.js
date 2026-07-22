@@ -309,6 +309,90 @@ export function buildMarketContext({ overview, news, vn30Board, watchBoard }) {
   return '# Dữ liệu tham khảo\n' + lines.join('\n');
 }
 
+// ── BÌNH LUẬN KIỂM CHỨNG CHIẾN LƯỢC (Backtest) ──────────────────────────────
+// Vai trò chuyên gia định lượng: đọc KẾT QUẢ backtest (đã tính sẵn ở backend) rồi nhận
+// định hiệu quả, SOI RED-FLAG OVERFIT (taxonomy mượn từ Vibe-Trading backtest-diagnose),
+// so với mua & giữ + VN-Index, và chốt chiến lược có đáng dùng cho mã này không. Không
+// web_search (mọi số liệu đã có). Giữ triết lý: quyết định rõ ràng, KHÔNG disclaimer.
+export const BACKTEST_SYSTEM = `Bạn là chuyên gia phân tích định lượng (quant) trong ứng dụng StockSense VN, chuyên đọc KẾT QUẢ KIỂM CHỨNG CHIẾN LƯỢC (backtest) trên cổ phiếu Việt Nam.
+
+Người dùng đã chạy một chiến lược kỹ thuật trên lịch sử giá THẬT của một mã. Toàn bộ số liệu (chỉ số hiệu quả, đường vốn, danh sách lệnh, so sánh mua & giữ và VN-Index) nằm ở "Dữ liệu tham khảo" bên dưới — ĐÃ TÍNH SẴN, bạn KHÔNG cần và KHÔNG được bịa thêm số.
+
+Nhiệm vụ: đánh giá chiến lược này CÓ ĐÁNG DÙNG cho mã đó không, chỉ ra điểm mạnh/yếu và CẢNH BÁO RỦI RO THỐNG KÊ (overfit / thiếu ý nghĩa).
+
+Cách làm:
+- Chỉ dùng số ở "Dữ liệu tham khảo". Diễn giải cho người không rành thuật ngữ: Sharpe (hiệu quả điều chỉnh rủi ro), max drawdown (mức lỗ sâu nhất từ đỉnh), win rate, profit factor, số lệnh, thời gian nắm giữ trung bình.
+- Trình bày tiếng Việt, markdown, số kiểu Việt Nam (nghìn = dấu chấm, thập phân = dấu phẩy). Ngắn gọn, đanh thép, không rào đón.
+
+Trình bày theo khung:
+## Chiến lược hoạt động ra sao
+Tóm tắt: tổng lợi nhuận, CAGR, số lệnh, thắng/thua, giữ trung bình bao lâu. Nêu chiến lược thắng/thua NHỜ điều gì (bắt trúng sóng lớn? bị cưa (whipsaw) nhiều lệnh nhỏ?).
+## So với Mua & Giữ và VN-Index
+Chiến lược có VƯỢT mua & giữ mã này và VN-Index không (chênh lệch bao nhiêu %)? Nếu thua benchmark, nói thẳng: giao dịch chủ động ở đây KHÔNG hơn cầm im.
+## Red flags & độ tin cậy thống kê
+SOI kỹ các dấu hiệu khiến kết quả KHÔNG đáng tin / dễ overfit — nêu cái nào DÍNH:
+- Quá ít lệnh (< ~10) → mẫu nhỏ, lời/lỗ có thể do MAY RỦI, không đủ ý nghĩa thống kê.
+- Lời dồn vào 1–2 lệnh / một con sóng duy nhất (giữ rất dài, ít lệnh) → phụ thuộc một lần đúng, khó lặp lại.
+- Max drawdown lớn (ví dụ > 25–30%) → chịu đựng tâm lý khó, dễ bỏ cuộc giữa đường.
+- Win rate cao nhưng profit factor thấp (~1) → thắng nhiều lần nhỏ, thua vài lần lớn, mong manh.
+- Nhiều lệnh thua liên tiếp / bị cưa liên tục (whipsaw) → chiến lược nhiễu với mã này.
+- Chỉ chạy trên MỘT mã, MỘT giai đoạn → chưa kiểm chứng qua nhiều mã/nhiều chu kỳ (walk-forward). Nhắc rõ giới hạn này.
+## Kết luận: có nên dùng chiến lược này cho mã này?
+- MỘT kết luận in đậm: **NÊN DÙNG** / **CẦN ĐIỀU CHỈNH** / **KHÔNG NÊN** — kèm độ tin cậy dạng PHẦN TRĂM.
+- Nếu CẦN ĐIỀU CHỈNH: gợi ý CỤ THỂ (đổi tham số nào sang mức nào, thêm bộ lọc xu hướng/khối lượng, thêm cắt lỗ…), viết dạng "đổi X từ A sang B".
+- 2–4 lý do rút trực tiếp từ số liệu.
+
+Kết thúc bằng chính mục Kết luận. KHÔNG thêm câu miễn trừ trách nhiệm.`;
+
+// Ghép "Dữ liệu tham khảo" cho bình luận backtest từ kết quả runBacktest().
+export function buildBacktestContext(bt) {
+  const m = bt.metrics || {};
+  const pctStr = (x) => (x == null ? '—' : (x * 100).toFixed(2).replace('.', ',') + '%');
+  const num = (x) => (x == null ? '—' : Math.round(x).toLocaleString('vi-VN'));
+  const pf = m.profitFactor === Infinity ? '∞ (không có lệnh thua)' : (m.profitFactor ?? 0).toFixed(2).replace('.', ',');
+  const plr = m.profitLossRatio === Infinity ? '∞' : (m.profitLossRatio ?? 0).toFixed(2).replace('.', ',');
+  const paramStr = Object.entries(bt.params || {})
+    .map(([k, v]) => `${k}=${v}`)
+    .join(', ') || 'mặc định';
+
+  const lines = [];
+  lines.push(`Thời điểm: ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} (giờ VN).`);
+  lines.push(`Mã: ${bt.code} | Chiến lược: ${bt.strategyLabel || bt.strategy} (${paramStr})`);
+  lines.push(`Khoảng kiểm chứng: ${bt.range?.from} → ${bt.range?.to} (${bt.range?.bars} phiên).`);
+  lines.push(
+    `Giả định giao dịch: vốn ${num(bt.settings?.initialCash)}đ, phí ${pctStr(bt.settings?.feeRate)}/chiều, thuế bán ${pctStr(
+      bt.settings?.sellTaxRate,
+    )}, lô ${bt.settings?.lotSize} cp, giữ tối thiểu ${bt.settings?.minHoldingBars} phiên (T+2.5).`,
+  );
+
+  lines.push('\n## Chỉ số hiệu quả chiến lược');
+  lines.push(`- Tổng lợi nhuận: ${pctStr(m.totalReturn)} | CAGR (lãi kép/năm): ${pctStr(m.annualReturn)}`);
+  lines.push(`- Sharpe: ${(m.sharpe ?? 0).toFixed(2).replace('.', ',')} | Sortino: ${(m.sortino ?? 0).toFixed(2).replace('.', ',')} | Calmar: ${(m.calmar ?? 0).toFixed(2).replace('.', ',')}`);
+  lines.push(`- Max drawdown (lỗ sâu nhất từ đỉnh): ${pctStr(m.maxDrawdown)}`);
+  lines.push(`- Số lệnh: ${m.tradeCount} | Win rate: ${pctStr(m.winRate)} | Profit factor: ${pf} | Tỷ lệ lãi/lỗ TB: ${plr}`);
+  lines.push(`- Chuỗi thua liên tiếp dài nhất: ${m.maxConsecutiveLoss} lệnh | Giữ trung bình: ${Math.round(m.avgHoldingBars || 0)} phiên/lệnh`);
+
+  lines.push('\n## So sánh benchmark');
+  lines.push(`- Mua & giữ VN-Index cùng kỳ: ${pctStr(m.benchmarkReturn)}`);
+  lines.push(`- Chênh lệch chiến lược vs VN-Index: ${pctStr(m.excessReturn)}`);
+
+  const trades = Array.isArray(bt.trades) ? bt.trades : [];
+  if (trades.length) {
+    lines.push(`\n## Chi tiết lệnh (${trades.length} lệnh)`);
+    const dstr = (t) => new Date(t * 1000).toLocaleDateString('vi-VN');
+    for (const t of trades.slice(0, 20)) {
+      lines.push(
+        `- ${dstr(t.entryTime)} mua ${num(t.entryPrice)}đ → ${dstr(t.exitTime)} bán ${num(t.exitPrice)}đ | lãi/lỗ ${num(
+          t.pnl,
+        )}đ | giữ ${t.holdingBars} phiên (${t.exitReason === 'end' ? 'đóng cuối kỳ' : 'theo tín hiệu'})`,
+      );
+    }
+    if (trades.length > 20) lines.push(`- … và ${trades.length - 20} lệnh khác.`);
+  }
+
+  return '# Dữ liệu tham khảo\n' + lines.join('\n');
+}
+
 // Lọc rò rỉ token gọi tool NATIVE của DeepSeek lọt vào văn bản. Khi research nhiều,
 // DeepSeek đôi khi phun khối `<｜｜DSML｜｜tool_calls> … </｜｜DSML｜｜tool_calls>` ra dưới
 // dạng text thay vì gọi tool có cấu trúc. Ký tự '｜' (U+FF5C) KHÔNG bao giờ xuất hiện
@@ -409,6 +493,7 @@ export async function streamMessages({
   onStatus,
   onReset,
   signal,
+  enableWebSearch = config.ai.webSearch, // cho phép TẮT web_search theo lượt (vd bình luận backtest)
 }) {
   // Model đã được backend chốt theo gói (routes/ai.js); fallback về model mặc định.
   const modelId = model || config.ai.model;
@@ -417,7 +502,7 @@ export async function streamMessages({
   // DÙNG BIẾN THỂ CƠ BẢN web_search_20250305 — endpoint tương thích Anthropic của
   // DeepSeek nhận tool này và trả về block web_search_tool_result chứa URL nguồn.
   const tools = [];
-  if (config.ai.webSearch) {
+  if (enableWebSearch) {
     tools.push({
       type: 'web_search_20250305',
       name: 'web_search',

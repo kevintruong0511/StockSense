@@ -123,3 +123,38 @@ export async function getIndexCandles(rawTf = DEFAULT_TF, symbol = 'VNINDEX') {
   if (!/^[A-Z0-9]{2,12}$/.test(sym)) return { symbol: 'VNINDEX', tf: DEFAULT_TF, candles: [] }
   return loadCandles(sym, rawTf, 1)
 }
+
+// Nến NGÀY dài (nhiều năm) cho BACKTEST — KHÔNG trim theo preset, KHÔNG gộp tuần/tháng.
+// scale: cổ phiếu 1000 (ra VND), chỉ số 1. Trả mảng nến tăng dần [{time,open,high,low,close,volume}].
+// Cache ngắn theo key(symbol|years|scale) tái dùng bộ nhớ đệm sẵn có.
+export async function getDailyHistory(rawSymbol, years = 3, scale = 1000) {
+  const sym = String(rawSymbol || '').trim().toUpperCase()
+  if (!/^[A-Z0-9]{2,12}$/.test(sym)) return []
+  const y = Math.min(10, Math.max(1, Number(years) || 3))
+
+  const key = `daily|${sym}|${y}|${scale}`
+  const hit = cache.get(key)
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.data
+
+  const to = Math.floor(Date.now() / 1000)
+  const from = to - Math.round(y * 366) * 86400 // dư ngày lịch để phủ đủ số năm giao dịch
+  const d = await fetchJson(
+    `https://dchart-api.vndirect.com.vn/dchart/history?symbol=${sym}&resolution=D&from=${from}&to=${to}`,
+  )
+  if (d?.s !== 'ok' || !Array.isArray(d.t)) return []
+
+  const px = (x) => (x == null ? null : Math.round(x * scale * 100) / 100)
+  const bars = d.t
+    .map((t, i) => ({
+      time: t,
+      open: px(d.o?.[i]),
+      high: px(d.h?.[i]),
+      low: px(d.l?.[i]),
+      close: px(d.c?.[i]),
+      volume: d.v?.[i] != null ? Math.round(d.v[i]) : 0,
+    }))
+    .filter((b) => b.open != null && b.close != null && b.high != null && b.low != null)
+
+  cache.set(key, { at: Date.now(), data: bars })
+  return bars
+}

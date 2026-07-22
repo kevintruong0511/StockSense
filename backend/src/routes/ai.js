@@ -7,7 +7,15 @@ import { consume, getUsage } from '../billing/usage.js'
 import { getMarketNews, getMarketOverview } from '../market/marketOverview.js'
 import { getPriceBoard, VN30 } from '../market/priceBoard.js'
 import { getStockSnapshot, getTickerUniverse } from '../market/stockData.js'
-import { BASE_SYSTEM, MARKET_SYSTEM, buildContext, buildMarketContext } from '../ai/analyst.js'
+import {
+  BASE_SYSTEM,
+  MARKET_SYSTEM,
+  BACKTEST_SYSTEM,
+  buildContext,
+  buildMarketContext,
+  buildBacktestContext,
+} from '../ai/analyst.js'
+import { runBacktest } from '../quant/backtest.js'
 import { runAnalysisStream } from '../ai/analysisStream.js'
 import {
   addMessage,
@@ -280,6 +288,65 @@ router.post('/analyze', async (req, res) => {
       await touchSession(session.id, { ticker: ticker ? String(ticker).toUpperCase() : undefined })
     },
   })
+})
+
+// AI BÌNH LUẬN KẾT QUẢ BACKTEST — SSE. Chạy LẠI backtest ở server (không tin số client
+// gửi lên) rồi để AI nhận định + soi red-flag overfit. Trừ 1 lượt theo gói như /analyze;
+// TẮT web_search (mọi số liệu đã có). Body: { code, strategy, params, years }.
+router.post('/backtest-comment', async (req, res) => {
+  if (!config.ai.enabled) {
+    return res.status(503).json({ error: 'Tính năng AI chưa được cấu hình (thiếu DEEPSEEK_API_KEY).' })
+  }
+
+  const { code, strategy, params, years } = req.body || {}
+
+  // Giới hạn lượt theo gói + chốt model — y hệt /analyze.
+  let modelId = config.ai.modelFlash
+  try {
+    const { rows } = await query('SELECT plan, plan_expires_at FROM users WHERE id = $1', [req.userId])
+    const plan = effectivePlan(rows[0])
+    const limit = dailyLimit(plan)
+    if (limit !== Infinity) {
+      const used = await getUsage(req.userId)
+      if (used >= limit) {
+        return res.status(429).json({
+          error: `Bạn đã dùng hết ${limit} lượt phân tích AI hôm nay (gói ${plan}). Nâng cấp gói để tiếp tục.`,
+          code: 'quota_exceeded',
+          plan,
+          limit,
+          used,
+        })
+      }
+    }
+    const tier = resolveModelTier(plan, req.body?.model)
+    modelId = tier === 'pro' ? config.ai.model : config.ai.modelFlash
+    await consume(req.userId)
+  } catch (err) {
+    console.error('[ai:backtest:quota]', err)
+    return res.status(500).json({ error: 'Không kiểm tra được hạn mức, vui lòng thử lại.' })
+  }
+
+  // Chạy lại backtest ở server (nguồn chân lý). Lỗi tham số/thiếu dữ liệu → 400 (lượt đã
+  // trừ nhưng hiếm; ưu tiên đơn giản, khớp cách /analyze trừ trước khi lấy dữ liệu).
+  let bt
+  try {
+    bt = await runBacktest({ code, strategy, params, years })
+  } catch (err) {
+    const msg = err?.message || 'Không chạy được kiểm chứng.'
+    const bad = /không hợp lệ|không đủ dữ liệu/i.test(msg)
+    if (!bad) console.error('[ai:backtest:run]', err)
+    return res.status(bad ? 400 : 500).json({ error: bad ? msg : 'Không chạy được kiểm chứng, vui lòng thử lại.' })
+  }
+
+  const system = BACKTEST_SYSTEM + '\n\n' + buildBacktestContext(bt)
+  const messages = [
+    {
+      role: 'user',
+      content: `Hãy nhận định kết quả kiểm chứng chiến lược "${bt.strategyLabel}" trên mã ${bt.code} theo khung đã hướng dẫn: đánh giá hiệu quả, so với mua & giữ và VN-Index, soi kỹ red flags/độ tin cậy thống kê, rồi chốt chiến lược này có nên dùng cho mã này không.`,
+    },
+  ]
+
+  await runAnalysisStream({ req, res, system, messages, modelId, enableWebSearch: false })
 })
 
 export default router

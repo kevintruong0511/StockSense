@@ -12,6 +12,7 @@ import {
   Palette,
   Globe,
   LogOut,
+  BarChart3,
 } from './icons.jsx'
 import Logo from './Logo.jsx'
 
@@ -22,6 +23,7 @@ const NAV_GROUPS = [
     items: [
       { key: 'dashboard', label: 'Trang chủ', Icon: Grid },
       { key: 'ai', label: 'Phân tích cổ phiếu', Icon: Sparkle },
+      { key: 'backtest', label: 'Kiểm chứng chiến lược', Icon: BarChart3 },
       { key: 'portfolio', label: 'Danh mục', Icon: Wallet },
     ],
   },
