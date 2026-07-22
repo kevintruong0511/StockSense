@@ -54,6 +54,29 @@ export function streamMarketAnalyze({ codes, model, onToken, onSources, onStatus
   })
 }
 
+// Stream AI BÌNH LUẬN kết quả backtest. Server chạy lại backtest rồi nhận định. Trừ 1 lượt
+// theo gói. Trả về hàm abort(). onError nhận meta.code==='quota_exceeded' khi hết lượt.
+export function streamBacktestComment({ code, strategy, params, years, model, onToken, onStatus, onReset, onDone, onError }) {
+  return streamSSE({
+    path: '/ai/backtest-comment',
+    body: { code, strategy, params, years, model },
+    onEvent: (evt) => {
+      if (evt.type === 'token') onToken?.(evt.text || '')
+      else if (evt.type === 'status') onStatus?.({ phase: evt.phase, query: evt.query || '' })
+      else if (evt.type === 'reset') onReset?.()
+      else if (evt.type === 'done') {
+        onDone?.()
+        return true
+      } else if (evt.type === 'error') {
+        onError?.(evt.error || 'Lỗi không xác định từ AI.')
+        return true
+      }
+    },
+    onEnd: () => onDone?.(),
+    onError,
+  })
+}
+
 // Gửi hội thoại và stream kết quả. Trả về hàm abort().
 // Callbacks: onSession({id,title}), onToken(text), onCitation({url,title,cited_text}),
 // onSources([{url,title}]), onStatus({phase,query}), onReset(), onDone(), onError(message).

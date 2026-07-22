@@ -39,6 +39,7 @@ export async function runAnalysisStream({
   modelId,
   preludeEvents = [],
   onAssistantDone,
+  enableWebSearch, // undefined = theo mặc định config; false = tắt (vd bình luận backtest)
 }) {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
@@ -79,6 +80,7 @@ export async function runAnalysisStream({
       messages,
       model: modelId,
       signal: ac.signal,
+      ...(enableWebSearch === undefined ? {} : { enableWebSearch }),
       onText: (text) => {
         if (text) {
           assistantBuf += text

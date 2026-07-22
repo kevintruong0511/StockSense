@@ -16,6 +16,20 @@ async function authedGet(path) {
   return res.json()
 }
 
+async function authedPost(path, body) {
+  const token = getToken()
+  const res = await fetch(`${API_BASE}/api${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify(body || {}),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.error || 'Không thực hiện được yêu cầu.')
+  }
+  return res.json()
+}
+
 export const fetchMarketOverview = () => authedGet('/stocks/market/overview')
 export const fetchMarketNews = (size = 10) => authedGet(`/stocks/market/news?size=${size}`)
 
@@ -43,3 +57,10 @@ export const fetchCandles = (code, tf = 'D') =>
 // Nến VN-Index cho biểu đồ tổng quan trang chủ. tf: 'D' | 'W' | 'M'.
 export const fetchIndexCandles = (tf = 'D') =>
   authedGet(`/stocks/market/index-candles?tf=${encodeURIComponent(tf)}`)
+
+// Danh mục chiến lược kiểm chứng + tham số mặc định (để render form). Trả { strategies }.
+export const fetchStrategies = () => authedGet('/stocks/strategies')
+
+// Chạy kiểm chứng (backtest) một mã. Trả metrics + đường vốn + benchmark + lệnh + markers.
+export const runBacktest = ({ code, strategy, params, years }) =>
+  authedPost('/stocks/backtest', { code, strategy, params, years })

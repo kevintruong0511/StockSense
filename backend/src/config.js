@@ -51,6 +51,16 @@ export const config = {
     },
   },
 
+  // Kiểm chứng chiến lược (backtest) — luật thị trường tiền mặt VN. Đọc từ env để chỉnh
+  // nhanh; mặc định sát thực tế môi giới bán lẻ (phí ~0,15%, thuế bán 0,1%, lô 100 cp).
+  backtest: {
+    initialCash: Number(process.env.BT_INITIAL_CASH) || 100_000_000, // vốn khởi điểm (đồng)
+    feeRate: Number(process.env.BT_FEE_RATE) || 0.0015, // phí giao dịch mỗi chiều
+    sellTaxRate: Number(process.env.BT_SELL_TAX) || 0.001, // thuế TNCN khi bán
+    lotSize: Number(process.env.BT_LOT_SIZE) || 100, // lô giao dịch (bội số cổ phiếu)
+    minHoldingBars: Number(process.env.BT_MIN_HOLD_BARS) || 3, // T+2.5 → giữ ≥3 phiên mới bán
+  },
+
   // Thanh toán QR tự động qua MB Bank + SePay. Mọi giá trị đọc từ env để dễ deploy.
   billing: {
     bankCode: process.env.SEPAY_BANK || 'MB', // mã ngân hàng cho QR SePay

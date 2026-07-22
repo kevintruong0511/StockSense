@@ -6,6 +6,8 @@ import { getStockData } from '../market/stockData.js'
 import { getCandles, getIndexCandles } from '../market/candles.js'
 import { getMovers } from '../market/movers.js'
 import { topTickers } from '../chat/history.js'
+import { runBacktest } from '../quant/backtest.js'
+import { STRATEGY_META } from '../quant/signals.js'
 
 const router = Router()
 
@@ -156,6 +158,27 @@ router.get('/market/index-candles', async (req, res) => {
   } catch (err) {
     console.error('[stocks:index-candles]', err)
     res.status(500).json({ error: 'Không tải được biểu đồ VN-Index.' })
+  }
+})
+
+// Danh mục chiến lược kiểm chứng + tham số mặc định (để FE render form).
+router.get('/strategies', (_req, res) => {
+  res.json({ strategies: STRATEGY_META })
+})
+
+// Kiểm chứng chiến lược (backtest) trên lịch sử giá thật. Compute thuần — KHÔNG trừ hạn
+// mức. Body: { code, strategy, params, years }. Trả metrics + đường vốn + benchmark + lệnh.
+router.post('/backtest', async (req, res) => {
+  const { code, strategy, params, years } = req.body || {}
+  try {
+    const result = await runBacktest({ code, strategy, params, years })
+    res.json(result)
+  } catch (err) {
+    // Lỗi tham số (mã/chiến lược/thiếu dữ liệu) → 400 với thông báo rõ; còn lại 500.
+    const msg = err?.message || 'Không chạy được kiểm chứng.'
+    const bad = /không hợp lệ|không đủ dữ liệu/i.test(msg)
+    if (!bad) console.error('[stocks:backtest]', err)
+    res.status(bad ? 400 : 500).json({ error: bad ? msg : 'Không chạy được kiểm chứng, vui lòng thử lại.' })
   }
 })
 
