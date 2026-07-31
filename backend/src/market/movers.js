@@ -1,6 +1,8 @@
 // Xếp hạng cổ phiếu cho bảng giá trang chủ: TĂNG mạnh nhất, GIẢM mạnh nhất, PHỔ BIẾN
 // nhất (theo giá trị khớp lệnh). VNDIRECT không cho sort toàn thị trường nên ta lấy một
 // RỔ RỘNG mã thanh khoản cao rồi tự sắp xếp. Giá VNDIRECT theo nghìn đồng → ×1000 ra VND.
+import { attachAvgVolume20 } from './volStats.js'
+
 const TIMEOUT_MS = 8000
 const CACHE_TTL_MS = 20_000 // xếp hạng đổi chậm hơn 1 mã → cache 20s
 let cache = null
@@ -91,7 +93,11 @@ async function fetchUniverseRows() {
 
 // Trả { gainers, losers, active, asOf, asOfTime, source }. Mỗi danh sách tối đa `limit` mã.
 export async function getMovers(limit = 10) {
-  if (cache && Date.now() - cache.at < CACHE_TTL_MS) return cache.data
+  if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
+    const d = cache.data
+    attachAvgVolume20([...new Set([...d.gainers, ...d.losers, ...d.active])]) // làm mới TB20 mỗi poll
+    return d
+  }
 
   let rows = []
   try {
@@ -107,6 +113,10 @@ export async function getMovers(limit = 10) {
     .filter((r) => r.price != null && r.value != null)
     .sort((a, b) => b.value - a.value)
     .slice(0, limit)
+
+  // Gắn TB20 phiên (avgVol20 + volRatio) cho các mã THỰC SỰ hiển thị (hợp của 3 danh sách),
+  // tránh nạp nền cho cả rổ ~90 mã. Các danh sách dùng chung tham chiếu row nên mutate là đủ.
+  attachAvgVolume20([...new Set([...gainers, ...losers, ...active])])
 
   const anyRow = rows.find((r) => r.date)
   const data = {

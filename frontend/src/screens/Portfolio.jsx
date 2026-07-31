@@ -16,6 +16,8 @@ import {
 import { fetchTickers } from '../data/ai.js'
 import { useAiRun, patchRun, getRun } from '../data/aiRunStore.js'
 import { upDown } from '../data/stocks.js'
+import { isMarketHours } from '../lib/marketHours.js'
+import { sanitizeNumInput, parseShares, parsePriceToVnd } from '../lib/parse.js'
 
 // Store bền cho luồng phân tích danh mục — sống qua chuyển màn (AI chạy tiếp ở nền).
 const AI_KEY = 'portfolio'
@@ -28,38 +30,6 @@ const todayVN = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/H
 
 // Số tiền lãi/lỗ có dấu (đồng, làm tròn — không hiển thị lẻ cho gọn).
 const signed = (n) => (n == null ? '—' : (n >= 0 ? '+' : '') + Math.round(n).toLocaleString('en-US'))
-
-// Chỉ cho gõ chữ số + phân cách kiểu Việt ('.' nghìn, ',' thập phân) vào ô số.
-const sanitizeNumInput = (s) => String(s ?? '').replace(/[^\d.,]/g, '')
-
-// Số lượng cổ phiếu kiểu Việt: '.' phân cách nghìn, ',' thập phân (hiếm dùng).
-// "1.000" → 1000 ; "1500" → 1500. NaN nếu sai.
-function parseShares(s) {
-  const t = String(s ?? '').trim().replace(/\s/g, '')
-  if (!t) return NaN
-  const normalized = t.replace(/\./g, '').replace(',', '.')
-  if (!/^\d*\.?\d+$/.test(normalized)) return NaN
-  return Number(normalized)
-}
-
-// Giá cổ phiếu nhập theo NGHÌN đồng — đúng cách niêm yết quen thuộc (71,25 = 71.250đ).
-// Dấu chấm HOẶC phẩy đều là dấu THẬP PHÂN. Trả về ĐỒNG (đã ×1000). NaN nếu sai.
-function parsePriceToVnd(s) {
-  const t = String(s ?? '').trim().replace(/\s/g, '').replace(',', '.')
-  if (!t || !/^\d*\.?\d+$/.test(t)) return NaN
-  return Math.round(Number(t) * 1000)
-}
-
-// Giờ giao dịch VN (T2–T6, 9:00–15:15) — chỉ khi này mới poll giá cho đỡ tốn (mẫu PriceBoard).
-function isMarketHours() {
-  const p = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
-  }).formatToParts(new Date())
-  const wd = p.find((x) => x.type === 'weekday')?.value
-  if (wd === 'Sat' || wd === 'Sun') return false
-  const t = Number(p.find((x) => x.type === 'hour')?.value) * 60 + Number(p.find((x) => x.type === 'minute')?.value)
-  return t >= 540 && t <= 915
-}
 
 const emptyForm = () => ({ ticker: '', side: 'buy', quantity: '', price: '', tradeDate: todayVN(), note: '' })
 

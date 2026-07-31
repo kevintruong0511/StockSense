@@ -118,7 +118,9 @@ export function candles(ticker) {
     const c = Math.max(1, o * (1 + drift + (rnd() - 0.5) * 0.03))
     const hi = Math.max(o, c) * (1 + rnd() * 0.018)
     const lo = Math.min(o, c) * (1 - rnd() * 0.018)
-    const t = d.toISOString().slice(0, 10)
+    // Nhãn ngày lấy theo giờ ĐỊA PHƯƠNG cho khớp với d.getDay() ở trên. Dùng
+    // toISOString() (UTC) sẽ lệch lùi 1 ngày ở múi giờ VN (UTC+7) → nến Thứ 2 bị gán Chủ nhật.
+    const t = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     out.push({ time: t, open: +o.toFixed(2), high: +hi.toFixed(2), low: +lo.toFixed(2), close: +c.toFixed(2) })
     vols.push({ time: t, value: Math.round(500000 + rnd() * 4000000) })
     price = c

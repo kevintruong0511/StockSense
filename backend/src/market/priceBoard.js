@@ -1,6 +1,8 @@
 // Bảng điện: lấy giá NHIỀU mã trong MỘT request (VNDIRECT stock_prices/latest batch).
 // Dữ liệu THẬT trong ngày — snapshot có độ trễ ~15', KHÔNG phải tick từng lệnh.
 // Giá VNDIRECT theo đơn vị nghìn đồng → ×1000 ra VND cho khớp phần còn lại của app.
+import { attachAvgVolume20 } from './volStats.js'
+
 const TIMEOUT_MS = 8000
 
 // Rổ VN30 (xấp xỉ — cấu phần đổi theo quý; đủ dùng cho bảng điện demo).
@@ -44,7 +46,10 @@ export async function getPriceBoard(codes) {
 
   const key = list.slice().sort().join(',')
   const hit = cache.get(key)
-  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.data
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+    attachAvgVolume20(hit.data.rows) // làm mới TB20 mỗi poll (đọc cache, không chặn)
+    return hit.data
+  }
 
   const filter = list.join(',')
   // 2 request bất kể số mã: stock_prices (OHLCV) + change_prices (để có TÊN doanh nghiệp).
@@ -80,6 +85,7 @@ export async function getPriceBoard(codes) {
   }
 
   const rows = list.map((code) => rowByCode.get(code) || emptyRow(code, nameByCode.get(code)))
+  attachAvgVolume20(rows) // + avgVol20 & volRatio (KL hôm nay / bình quân 20 phiên)
   const data = {
     rows,
     asOf: rows.find((r) => r.date)?.date || null,

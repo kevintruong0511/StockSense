@@ -4,68 +4,12 @@ import TickerPicker from './TickerPicker.jsx'
 import TickerLogo from './TickerLogo.jsx'
 import { fetchPriceBoard, fetchPriceBoardGroup, fetchMovers } from '../data/market.js'
 import { fetchTickers } from '../data/ai.js'
+import { isMarketHours } from '../lib/marketHours.js'
+import { CEIL, FLOORC, REF, priceColor, vnd, pctStr, chgStr, volShort, ratioStr, ratioStyle } from '../lib/priceFormat.js'
+import { MAX_WATCH, loadWatch, saveWatch } from '../lib/watchlist.js'
 
-// Màu bảng điện chuẩn VN: trần = tím, sàn = lơ (cyan), tham chiếu = vàng, tăng = lá, giảm = đỏ.
-const CEIL = '#8B5CF6'
-const FLOORC = '#06B6D4'
-const REF = '#CA8A04'
-const UP = '#16A34A'
-const DOWN = '#DC2626'
-
-// Danh mục mặc định = rổ VN30 (nhiều mã, thanh khoản cao) để bảng giá đầy đặn ngay từ đầu.
-// Người dùng vẫn thêm/bớt tuỳ ý (lưu ở localStorage).
-const WATCH_DEFAULT = [
-  'ACB', 'BCM', 'BID', 'BVH', 'CTG', 'FPT', 'GAS', 'GVR', 'HDB', 'HPG',
-  'LPB', 'MBB', 'MSN', 'MWG', 'PLX', 'SAB', 'SHB', 'SSB', 'SSI', 'STB',
-  'TCB', 'TPB', 'VCB', 'VHM', 'VIB', 'VIC', 'VJC', 'VNM', 'VPB', 'VRE',
-]
-// v2: đổi khoá để áp danh mục mặc định mới (VN30) cho cả người đã lưu bản 6 mã cũ.
-const WATCH_KEY = 'ss.watchlist.v2'
-const MAX_WATCH = 50
-
-// Đọc/ghi danh mục theo dõi ở localStorage (DB hoá sau).
-// Export cho thẻ "AI nhận định thị trường" gửi kèm danh mục khi phân tích.
-export function loadWatch() {
-  try {
-    const arr = JSON.parse(localStorage.getItem(WATCH_KEY))
-    if (Array.isArray(arr) && arr.length) return arr.map((c) => String(c).toUpperCase())
-  } catch { /* dùng mặc định */ }
-  return WATCH_DEFAULT
-}
-function saveWatch(list) {
-  try { localStorage.setItem(WATCH_KEY, JSON.stringify(list)) } catch { /* bỏ qua */ }
-}
-
-// Giờ giao dịch VN (T2–T6, 9:00–15:15) — chỉ khi này mới poll cho đỡ tốn.
-function isMarketHours() {
-  const p = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
-  }).formatToParts(new Date())
-  const wd = p.find((x) => x.type === 'weekday')?.value
-  if (wd === 'Sat' || wd === 'Sun') return false
-  const t = Number(p.find((x) => x.type === 'hour')?.value) * 60 + Number(p.find((x) => x.type === 'minute')?.value)
-  return t >= 540 && t <= 915
-}
-
-// Màu ô giá khớp theo tương quan trần/sàn/tham chiếu.
-function priceColor(r) {
-  if (r.price == null) return '#94A3B8'
-  if (r.ceiling != null && r.price >= r.ceiling) return CEIL
-  if (r.floorPrice != null && r.price <= r.floorPrice) return FLOORC
-  if (r.ref != null && r.price > r.ref) return UP
-  if (r.ref != null && r.price < r.ref) return DOWN
-  return REF
-}
-
-const vnd = (n) => (n == null ? '—' : n.toLocaleString('en-US'))
-const pctStr = (p) => (p == null ? '—' : (p >= 0 ? '+' : '') + p.toFixed(2) + '%')
-const chgStr = (c) => (c == null ? '—' : (c >= 0 ? '+' : '') + c.toLocaleString('en-US'))
-function volShort(v) {
-  if (v == null) return '—'
-  if (v >= 1e6) return (v / 1e6).toFixed(2) + 'tr'
-  if (v >= 1e3) return Math.round(v / 1e3).toLocaleString('en-US') + 'K'
-  return v.toLocaleString('en-US')
-}
+// Re-export cho thẻ "AI nhận định thị trường" gửi kèm danh mục khi phân tích.
+export { loadWatch }
 
 // Tab dạng xếp hạng (đánh số thứ tự ở đầu).
 const RANK_TABS = new Set(['gainers', 'losers'])
@@ -158,6 +102,8 @@ export default function PriceBoard({ onOpenStock }) {
 
   const editable = tab === 'watch'
   const ranked = RANK_TABS.has(tab) // tăng/giảm mạnh → đánh số thứ tự
+  // Thống kê: số mã có KL khớp trong ngày ≥ bình quân 20 phiên gần nhất (volRatio ≥ 1).
+  const spikeCount = rows.reduce((n, r) => n + (r.volRatio != null && r.volRatio >= 1 ? 1 : 0), 0)
   const tabBtn = (key, label, count) => (
     <button
       onClick={() => setTab(key)}
@@ -191,6 +137,14 @@ export default function PriceBoard({ onOpenStock }) {
           {tabBtn('watch', 'Danh mục', watch.length)}
         </div>
         <div className="ml-auto flex items-center gap-2.5 text-[11.5px] text-slate-400 dark:text-slate-500">
+          {spikeCount > 0 && (
+            <span
+              className="hidden items-center gap-1 rounded-md bg-green-50 px-2 py-0.5 font-semibold text-green-700 sm:inline-flex dark:bg-green-500/10 dark:text-green-400"
+              title="Số mã đang hiển thị có khối lượng khớp trong ngày ≥ bình quân 20 phiên gần nhất"
+            >
+              {spikeCount} mã KL≥TB20
+            </span>
+          )}
           {live ? (
             <span className="inline-flex items-center gap-1 font-semibold text-green-600">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
@@ -297,7 +251,7 @@ export default function PriceBoard({ onOpenStock }) {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse">
+          <table className="w-full min-w-[900px] border-collapse">
             <thead>
               <tr className="text-right text-[11px] uppercase tracking-[0.04em] text-slate-400 dark:text-slate-500">
                 <th className="px-5 py-2.5 text-left font-semibold">Mã</th>
@@ -307,7 +261,16 @@ export default function PriceBoard({ onOpenStock }) {
                 <th className="px-2.5 py-2.5 font-semibold">Khớp</th>
                 <th className="px-2.5 py-2.5 font-semibold">+/-</th>
                 <th className="px-2.5 py-2.5 font-semibold">%</th>
-                <th className="px-5 py-2.5 font-semibold">KL</th>
+                <th className="px-2.5 py-2.5 font-semibold" title="Khối lượng khớp trong ngày">KL</th>
+                <th className="px-2.5 py-2.5 font-semibold" title="Khối lượng khớp bình quân 20 phiên gần nhất">
+                  TB20
+                </th>
+                <th
+                  className="px-5 py-2.5 font-semibold"
+                  title="Khối lượng khớp hôm nay so với bình quân 20 phiên gần nhất — ≥ 1× là đột biến"
+                >
+                  KL/TB20
+                </th>
                 {editable && <th className="w-8 px-2 py-2.5" />}
               </tr>
             </thead>
@@ -361,7 +324,27 @@ export default function PriceBoard({ onOpenStock }) {
                         {pctStr(r.pctChange)}
                       </span>
                     </td>
-                    <td className="tnum px-5 py-3 text-[13px] text-slate-500 dark:text-slate-400">{volShort(r.volume)}</td>
+                    <td className="tnum px-2.5 py-3 text-[13px] font-semibold text-slate-600 dark:text-slate-300">{volShort(r.volume)}</td>
+                    <td className="tnum px-2.5 py-3 text-[13px] text-slate-400 dark:text-slate-500">{volShort(r.avgVol20)}</td>
+                    <td className="px-5 py-3">
+                      {r.volRatio == null ? (
+                        <span className="text-slate-300 dark:text-slate-600">—</span>
+                      ) : (
+                        <span
+                          className="tnum inline-block rounded-md px-2 py-[3px] text-[12.5px] font-bold"
+                          style={ratioStyle(r.volRatio)}
+                          title={
+                            r.avgVol20 != null
+                              ? `Bình quân 20 phiên: ${volShort(r.avgVol20)} · KL hôm nay ${
+                                  r.volRatio >= 1 ? 'CAO hơn' : 'thấp hơn'
+                                } bình quân`
+                              : undefined
+                          }
+                        >
+                          {ratioStr(r.volRatio)}
+                        </span>
+                      )}
+                    </td>
                     {editable && (
                       <td className="px-2 py-3">
                         <button
